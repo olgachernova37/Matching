@@ -1,6 +1,7 @@
 import { ApiError, GoogleGenAI, ThinkingLevel, type Content, type FunctionDeclaration, type GenerateContentParameters, type GenerateContentResponse, type Part } from "@google/genai";
 import { serverEnv } from "@/lib/env";
 import type { AgentAction, ChatMessage } from "@/lib/types";
+import { PRIMARY_SUBGRAPH_ID } from "../graph/index.ts";
 import { graphDeps } from "./deps";
 import { runTool, toolDefinitions } from "./tools";
 
@@ -21,8 +22,19 @@ async function prefetchEvidence(messages: ChatMessage[]): Promise<string | undef
   if (!address) return undefined;
   try {
     const graph = await graphDeps();
-    const assessment = graph.assessRisk(await graph.getWalletActivity(address));
-    return `Live evidence for ${address}, already fetched from The Graph — use it; do not re-fetch:\n${JSON.stringify(assessment)}`;
+    // The ETH price lives in the same Uniswap V3 subgraph; without it the model
+    // invented one (valued 1 ETH at $3,000 when the subgraph said $2,467).
+    const [assessment, ethPriceUsd] = await Promise.all([
+      graph.getWalletActivity(address).then((activity) => graph.assessRisk(activity)),
+      graph
+        .runGraphQL<{ bundle: { ethPriceUSD: string } | null }>(PRIMARY_SUBGRAPH_ID, '{ bundle(id: "1") { ethPriceUSD } }')
+        .then((result) => Number(result.bundle?.ethPriceUSD))
+        .catch(() => Number.NaN),
+    ]);
+    const price = Number.isFinite(ethPriceUsd)
+      ? `Live ETH price from the same subgraph (Uniswap V3 bundle): $${ethPriceUsd.toFixed(2)}. Use it for any USD valuation.`
+      : "Live ETH price unavailable — do not state a USD value for ETH.";
+    return `Live evidence for ${address}, already fetched from The Graph — use it; do not re-fetch:\n${JSON.stringify(assessment)}\n${price}`;
   } catch (error) {
     const detail = error instanceof Error ? error.message : "unknown error";
     return `Live Graph evidence for ${address} is currently UNAVAILABLE (${detail}). Do not retry the Graph tools for this address; say plainly that no live evidence could be obtained.`;
@@ -33,11 +45,29 @@ const systemPrompt = `You are a cautious on-chain operations copilot.
 
 Use The Graph tools to inspect live evidence before making risk claims. Every risk claim must cite the concrete number and the exact source.subgraphId. Never call a wallet safe or risky without evidence.
 
-You may propose actions, but you must never claim to have executed, sent, settled, or completed an action until a separate human approval receipt exists and the execution endpoint confirms success. Say "proposed" or "awaiting human approval" when appropriate. The propose_action tool only prepares a payload; it never executes it. When an action concerns a wallet, put that address in payload.address.
+You may propose actions, but you must never claim to have executed, sent, settled, or completed an action until a separate human approval receipt exists and the execution endpoint confirms success. Say "proposed" or "awaiting human approval" when appropriate. The propose_action tool only prepares a payload; it never executes it. When an action concerns a wallet, put that address in payload.address. An action exists ONLY if propose_action returned it: to prepare anything you must call propose_action, and you must never say you prepared, proposed or queued something you did not pass to propose_action.
 
-Selfie Check raises the cost of automated and repeated abuse. Do not claim it is sybil-proof or guarantees one person per account.`;
+Selfie Check raises the cost of automated and repeated abuse. Do not claim it is sybil-proof or guarantees one person per account.
+
+Never guess prices. For any USD value of ETH, use the live ETH price provided with the evidence; if none is provided, say the USD value is unknown.
+
+Reply in plain text for a chat bubble: no markdown syntax (no asterisks, backticks or headings). Keep it short; use lines starting with "- " for lists. Round USD amounts to cents. Never mention internal tool or function names to the user — say "I've prepared it for your approval", not the name of a tool.`;
 
 const MAX_TURNS = 8;
+
+/*
+ * Honesty check, enforced in code rather than hoped for in the prompt.
+ * Observed with gemini-flash-lite at LOW thinking: the model replied "I have
+ * prepared the transfer for your approval" WITHOUT calling propose_action, so
+ * no action existed and nothing could be approved. A claim is checked against
+ * what the tools actually did: one corrective turn, then a server-side
+ * correction is appended — an unbacked claim never reaches the user as-is.
+ */
+const CLAIMS_ACTION = /\b(prepared|proposed|queued|created|set up)\b/i;
+const HONESTY_NUDGE =
+  "System check: your reply says an action was prepared, but propose_action was not called, so no action exists. " +
+  "Call propose_action now with the details, or reply again stating plainly that nothing has been prepared.";
+const SERVER_CORRECTION = "\n\n[System note: no action was actually prepared — nothing is awaiting approval.]";
 
 /*
  * Latency and capacity, measured 2026-09-11 on the free tier ("Reply: ok"):
@@ -92,6 +122,7 @@ export async function plan(messages: ChatMessage[]): Promise<{ reply: string; ac
   // propose_action persists the action server-side; it must also reach the UI,
   // or there is nothing for the human to approve.
   let proposed: AgentAction | undefined;
+  let nudged = false;
 
   for (let turn = 0; turn < MAX_TURNS; turn += 1) {
     const response = await generate(ai, {
@@ -106,7 +137,18 @@ export async function plan(messages: ChatMessage[]): Promise<{ reply: string; ac
 
     const calls = response.functionCalls ?? [];
     if (calls.length === 0) {
-      return { reply: response.text?.trim() || "I could not produce a response.", action: proposed };
+      const reply = response.text?.trim() || "I could not produce a response.";
+      if (!proposed && CLAIMS_ACTION.test(reply)) {
+        if (!nudged) {
+          nudged = true;
+          const modelTurn = response.candidates?.[0]?.content;
+          if (modelTurn) contents.push(modelTurn);
+          contents.push({ role: "user", parts: [{ text: HONESTY_NUDGE }] });
+          continue;
+        }
+        return { reply: reply + SERVER_CORRECTION };
+      }
+      return { reply, action: proposed };
     }
 
     // Append the model's turn verbatim. Thinking models attach a thoughtSignature
