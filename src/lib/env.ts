@@ -55,32 +55,36 @@ const serverSchema = z.object({
   GRAPH_API_KEY: required("GRAPH_API_KEY"),
   BAZANTIC_API_KEY: required("BAZANTIC_API_KEY"),
   BAZANTIC_GATEWAY_URL: z.url("BAZANTIC_GATEWAY_URL must be a valid URL"),
-  ANTHROPIC_API_KEY: required("ANTHROPIC_API_KEY"),
+  GEMINI_API_KEY: required("GEMINI_API_KEY"),
+  GEMINI_MODEL: z.string().min(1).default("gemini-flash-lite-latest"),
 });
 
 export type ServerEnv = z.infer<typeof serverSchema>;
 
-let cached: ServerEnv | null = null;
-
 /**
- * Validates on first call and fails loudly, naming every missing variable at
- * once — never a silent `undefined` surfacing three layers deep at 3am.
+ * Per-key validation, on access.
+ *
+ * `serverEnv().GRAPH_API_KEY` validates *only* GRAPH_API_KEY. Validating every
+ * secret up front meant one missing credential (say, a World ID key still
+ * waiting on access approval) broke unrelated features — the planner and the
+ * Graph smoke test both failed naming WLD_RP_ID. Each module now fails only
+ * for the key it actually needs, still loudly and by name.
  */
 export function serverEnv(): ServerEnv {
-  if (cached) return cached;
-
-  const parsed = serverSchema.safeParse(process.env);
-  if (!parsed.success) {
-    const missing = parsed.error.issues
-      .map((i) => `  - ${i.path.join(".") || "(root)"}: ${i.message}`)
-      .join("\n");
-    throw new Error(
-      `Invalid server environment. Fix .env.local (see .env.example):\n${missing}`,
-    );
-  }
-
-  cached = parsed.data;
-  return cached;
+  return new Proxy({} as ServerEnv, {
+    get(_target, key) {
+      if (typeof key !== "string" || !(key in serverSchema.shape)) return undefined;
+      const field = serverSchema.shape[key as keyof ServerEnv];
+      const parsed = field.safeParse(process.env[key]);
+      if (!parsed.success) {
+        throw new Error(
+          `Invalid server environment: ${key} — ${parsed.error.issues[0]?.message ?? "invalid"}. ` +
+            "Fix .env.local (see .env.example).",
+        );
+      }
+      return parsed.data;
+    },
+  });
 }
 
 // ------------------------------------------------------------------- mocks
