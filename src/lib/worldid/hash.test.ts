@@ -14,7 +14,7 @@ test("preserves nested objects and array order", () => {
 });
 
 test("rejects ambiguous values instead of coercing them", () => {
-  const values = [undefined, Number.NaN, Number.POSITIVE_INFINITY, -0, () => undefined, Symbol("x"), 1n];
+  const values = [undefined, Number.NaN, Number.POSITIVE_INFINITY, -0, () => undefined, Symbol("x"), BigInt(1)];
   for (const value of values) {
     assert.throws(() => canonicalJson(value), TypeError);
   }
