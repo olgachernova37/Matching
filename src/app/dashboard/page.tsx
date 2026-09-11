@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import HumanGate from "@/components/HumanGate";
 import { getWalletAssessment } from "@/components/_api";
-import { approvedReceipt, highRiskAssessment, messages, pendingAction, rejectedReceipt } from "@/components/_mocks";
+import { approvedAndExecuted, approvedReceipt, highRiskAssessment, messages, pendingAction, rejectedReceipt } from "@/components/_mocks";
 import type { HumanGateReceipt, RiskAssessment } from "@/lib/types";
 
 const formatUsd = (amount: number) => `$${amount.toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
@@ -15,7 +15,7 @@ function riskTone(score: number) {
   return { text: "text-ok", stroke: "var(--ok)", label: "LOW" };
 }
 
-function LiveBadge({ queriedAt }: { queriedAt: number }) {
+function LiveBadge({ queriedAt, subgraphId }: { queriedAt: number; subgraphId: string }) {
   const [elapsed, setElapsed] = useState(() => Math.max(0, Date.now() - queriedAt));
 
   useEffect(() => {
@@ -28,7 +28,7 @@ function LiveBadge({ queriedAt }: { queriedAt: number }) {
       <span className="h-2 w-2 animate-pulse rounded-full bg-ok" aria-hidden="true" />
       <span>LIVE</span>
       <span className="text-foreground">{Math.floor(elapsed / 1000)}s ago</span>
-      <span className="text-muted">via subgraph</span>
+      <span className="text-muted">{subgraphId}</span>
     </div>
   );
 }
@@ -82,6 +82,7 @@ export default function Dashboard() {
   const [isMock, setIsMock] = useState(true);
   const [receipt, setReceipt] = useState<HumanGateReceipt | undefined>();
   const [currentTime, setCurrentTime] = useState<number | null>(null);
+  const [executed, setExecuted] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -126,11 +127,19 @@ export default function Dashboard() {
         </section>
 
         <section className="min-h-[620px] bg-panel p-5 sm:p-6" aria-labelledby="evidence-heading">
-          <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border pb-4"><div><h2 id="evidence-heading" className="font-mono text-xs uppercase tracking-[0.16em] text-muted">Evidence panel</h2><p className="mt-2 font-mono text-xs text-foreground">{assessment.evidence.address}</p></div><LiveBadge queriedAt={assessment.evidence.source.queriedAt} /></div>
+          <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border pb-4"><div><h2 id="evidence-heading" className="font-mono text-xs uppercase tracking-[0.16em] text-muted">Evidence panel</h2><p className="mt-2 font-mono text-xs text-foreground">{assessment.evidence.address}</p></div><LiveBadge queriedAt={assessment.evidence.source.queriedAt} subgraphId={assessment.evidence.source.subgraphId} /></div>
           <div className="mt-5 flex flex-wrap items-center gap-5"><RiskGauge score={assessment.score} /><div><p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted">Source subgraph</p><p className="mt-2 font-mono text-sm text-brand">{assessment.evidence.source.subgraphId}</p><p className={`mt-3 font-mono text-xs ${tone.text}`}>{tone.label} · decision confidence from Graph evidence</p></div></div>
           <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4"><StatTile label="Transactions" value={String(assessment.evidence.txCount)} /><StatTile label="Counterparties" value={String(assessment.evidence.uniqueCounterparties)} /><StatTile label="First seen" value={assessment.evidence.firstSeen ? new Date(assessment.evidence.firstSeen).toLocaleDateString() : "Unknown"} /><StatTile label="Volume USD" value={formatUsd(assessment.evidence.totalVolumeUsd)} /></div>
           <div className="mt-6"><h3 className="font-mono text-xs uppercase tracking-[0.14em] text-muted">Risk reasons / citations</h3><ul className="mt-3 space-y-2">{assessment.reasons.map((reason) => <li key={reason} className="border-l-2 border-warn bg-panel-raised px-3 py-2 text-sm text-foreground">{reason}</li>)}</ul></div>
-          <div className="mt-6 border border-warn/60 bg-warn/10 p-4"><div className="flex items-center justify-between gap-4"><div><p className="font-mono text-[10px] uppercase tracking-[0.14em] text-warn">Pending action</p><p className="mt-2 text-sm text-foreground">{pendingAction.summary}</p></div><span className="font-mono text-sm text-warn">{formatUsd(pendingAction.costUsd)}</span></div><div className="mt-4 grid gap-2 font-mono text-xs text-muted sm:grid-cols-2"><span>risk score: <b className={tone.text}>{pendingAction.riskScore}</b></span><span>action hash: {shorten(receipt?.actionHash ?? "0xpending-action-hash")}</span></div><div className="mt-4"><HumanGate action={pendingAction} /></div><button type="button" disabled={!canExecute} className="mt-2 w-full border border-border bg-panel-raised px-4 py-3 text-sm font-semibold text-muted disabled:cursor-not-allowed disabled:opacity-100">{canExecute ? "Execute through x402 Gateway" : "Blocked: awaiting human approval"}</button></div>
+          <div className="mt-6 border border-warn/60 bg-warn/10 p-4">
+            <div className="flex items-center justify-between gap-4"><div><p className="font-mono text-[10px] uppercase tracking-[0.14em] text-warn">Pending action</p><p className="mt-2 text-sm text-foreground">{pendingAction.summary}</p></div><span className="font-mono text-sm text-warn">{formatUsd(pendingAction.costUsd)}</span></div>
+            <div className="mt-4 grid gap-2 font-mono text-xs text-muted sm:grid-cols-2"><span>risk score: <b className={tone.text}>{pendingAction.riskScore}</b></span><span>action hash: {shorten(receipt?.actionHash ?? "0xpending-action-hash")}</span></div>
+            <div className="mt-4"><HumanGate action={pendingAction} /></div>
+            <button type="button" disabled={!canExecute || executed} onClick={() => setExecuted(true)} className={`mt-2 w-full border px-4 py-3 text-sm font-semibold ${executed ? "border-ok bg-ok/10 text-ok" : "border-border bg-panel-raised text-muted disabled:cursor-not-allowed disabled:opacity-100"}`}>
+              {executed ? `Executed · ${approvedAndExecuted.txHash}` : canExecute ? "Execute through x402 Gateway" : "Blocked: awaiting human approval"}
+            </button>
+            {executed && <p className="mt-2 font-mono text-xs text-ok">x402 receipt accepted · {approvedAndExecuted.steps.length} recipe steps completed</p>}
+          </div>
         </section>
 
         <section className="min-h-[620px] bg-panel p-5" aria-labelledby="trail-heading"><div className="flex items-center justify-between border-b border-border pb-4"><h2 id="trail-heading" className="font-mono text-xs uppercase tracking-[0.16em] text-muted">Receipt trail</h2><span className="font-mono text-[10px] text-muted">APPEND ONLY</span></div><div className="space-y-3 pt-5"><ReceiptEntry receipt={rejectedReceipt} status="rejected" />{receipt && <ReceiptEntry receipt={receipt} status="approved" />}</div><div className="mt-8 border-t border-border pt-4"><p className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted">Receipt policy</p><p className="mt-2 text-xs leading-5 text-muted">A receipt is single-action, short-lived, and cryptographically bound to the proposed payload.</p></div></section>

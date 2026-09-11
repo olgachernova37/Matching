@@ -28,12 +28,18 @@ export default function Home() {
           </a>
         </section>
         <section aria-label="Six-step action flow" className="border-t border-border pt-8">
+          <div className="relative hidden lg:block" aria-hidden="true">
+            <svg viewBox="0 0 1200 42" className="absolute inset-x-0 top-3 h-8 w-full" preserveAspectRatio="none">
+              <path d="M20 21H1180" stroke="var(--border)" strokeWidth="1" strokeDasharray="4 8" />
+              {[100, 300, 500, 700, 900, 1100].map((x) => <circle key={x} cx={x} cy="21" r="4" fill="var(--background)" stroke="var(--brand)" strokeWidth="2" />)}
+            </svg>
+          </div>
           <div className="grid gap-6 sm:grid-cols-3 lg:grid-cols-6">
             {steps.map(([number, title, detail], index) => (
               <div key={number} className="relative">
                 <div className="mb-4 flex items-center gap-3">
                   <span className="font-mono text-xs text-brand">{number}</span>
-                  {index < steps.length - 1 && <span className="hidden h-px flex-1 bg-border lg:block" />}
+                  {index < steps.length - 1 && <span className="hidden h-px flex-1 bg-border lg:hidden" />}
                 </div>
                 <h2 className="font-mono text-sm font-semibold text-foreground">{title}</h2>
                 <p className="mt-2 text-sm leading-5 text-muted">{detail}</p>
