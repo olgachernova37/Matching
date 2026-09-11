@@ -1,5 +1,5 @@
 import type { WalletActivity } from "@/lib/types";
-import { runGraphQL } from "./client";
+import { runGraphQL } from "./client.ts";
 
 export const PRIMARY_SUBGRAPH_ID = "5zvR82QoaXYFyDEKLZ9t6v9adgnptxYpKpSbxtgVENFV";
 const MAX_SWAPS = 1000;

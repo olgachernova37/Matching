@@ -1,4 +1,4 @@
-import { serverEnv } from "@/lib/env";
+import { serverEnv } from "../env.ts";
 
 const gatewayBase = "https://gateway.thegraph.com/api/subgraphs/id";
 

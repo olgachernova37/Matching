@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { assessRisk } from "./risk.ts";
-import type { WalletActivity } from "@/lib/types";
+import type { WalletActivity } from "../types.ts";
 
 function activity(overrides: Partial<WalletActivity> = {}): WalletActivity {
   return { address: "0xabc", firstSeen: null, txCount: 0, uniqueCounterparties: 0, totalVolumeUsd: 0, topCounterparties: [], source: { subgraphId: "test-subgraph", queriedAt: 1 }, ...overrides };
