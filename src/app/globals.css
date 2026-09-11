@@ -1,0 +1,42 @@
+@import "tailwindcss";
+
+/*
+ * Human-Gated AI Copilot — operator console palette.
+ * Dark-committed on purpose: this is a monitoring console, not a marketing page.
+ * T6 owns all component styling; these are the shared tokens it builds on.
+ */
+:root {
+  --background: #0a0c10;
+  --panel: #11151c;
+  --panel-raised: #161b24;
+  --border: #1f2630;
+  --foreground: #e6edf3;
+  --muted: #8b949e;
+
+  /* Semantic — used by the risk gauge, LIVE badge and receipt trail. */
+  --ok: #3fb950;
+  --warn: #d29922;
+  --danger: #f85149;
+  --brand: #58a6ff;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-panel: var(--panel);
+  --color-panel-raised: var(--panel-raised);
+  --color-border: var(--border);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-ok: var(--ok);
+  --color-warn: var(--warn);
+  --color-danger: var(--danger);
+  --color-brand: var(--brand);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
