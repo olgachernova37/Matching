@@ -55,7 +55,6 @@ const serverSchema = z.object({
   WLD_RP_ID: required("WLD_RP_ID"),
   WLD_RP_PRIVATE_KEY: required("WLD_RP_PRIVATE_KEY"),
   GRAPH_API_KEY: required("GRAPH_API_KEY"),
-  BAZANTIC_API_KEY: required("BAZANTIC_API_KEY"),
   BAZANTIC_GATEWAY_URL: z.url("BAZANTIC_GATEWAY_URL must be a valid URL"),
   GEMINI_API_KEY: required("GEMINI_API_KEY"),
   GEMINI_MODEL: z.string().min(1).default("gemini-flash-lite-latest"),
