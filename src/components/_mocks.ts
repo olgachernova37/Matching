@@ -2,6 +2,7 @@ import type {
   AgentAction,
   ChatMessage,
   HumanGateReceipt,
+  RecipeRun,
   RiskAssessment,
 } from "@/lib/types";
 
@@ -55,6 +56,17 @@ export const approvedReceipt: HumanGateReceipt = {
   verifiedAt: now - 86400000,
   expiresAt: now + 240000,
   continuity: { isReturning: true, firstSeenAt: now - 12 * 86400000, approvalCount: 4, daysKnown: 12 },
+};
+
+export const approvedAndExecuted: RecipeRun = {
+  recipeId: "wallet-risk-trace",
+  status: "success",
+  steps: [
+    { name: "risk evidence", service: "The Graph", ok: true, output: "live assessment attached" },
+    { name: "settlement", service: "Bazantic x402", ok: true, output: "gateway receipt accepted" },
+  ],
+  costUsd: pendingAction.costUsd,
+  txHash: "0xsettled-demo-7f2a",
 };
 
 export const messages: ChatMessage[] = [
