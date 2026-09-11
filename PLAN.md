@@ -430,7 +430,17 @@ T0 (human) ──▶ T1 (scaffold + contracts)  ◀── MUST COMPLETE BEFORE A
 ### 🟩 T2 — The Graph data layer `[~4h · parallel]` 🏆 *primary prize surface*
 **Owns:** `src/lib/graph/**`, `src/app/api/graph/activity/route.ts`
 
-**Prompt:**
+> **⚠️ Superseded by [`prompts/t2-graph.md`](prompts/t2-graph.md)** — use that. It carries facts
+> verified live on 2026-09-11 that correct the brief below:
+> - **Auth is `Authorization: Bearer <key>`** on `https://gateway.thegraph.com/api/subgraphs/id/<id>`,
+>   not the key-in-URL-path form shown below.
+> - **Primary subgraph: `5zvR82QoaXYFyDEKLZ9t6v9adgnptxYpKpSbxtgVENFV`** (canonical Uniswap V3
+>   mainnet) — `swaps` filterable by `origin`, verified.
+> - `8e4dRt4P4WHXnKbEq7STaQfU2g99WZ5S4w39f2PcUTjD` is a positions/LP deployment with **no `swaps`**.
+> - Token API needs a separate Pinax JWT — skip. MCP `/sse` exists but its handshake stalled — timebox.
+> - An empty result means *no Uniswap V3 history*, **not** *new wallet*. Reason strings must say so.
+
+**Original brief (kept for reference):**
 > Implement `src/lib/graph/` per the interface in PLAN.md §3.
 > 1. `client.ts` — Gateway GraphQL client. Endpoint `https://gateway.thegraph.com/api/<GRAPH_API_KEY>/subgraphs/id/<subgraphId>`. Typed, with retry + 10s timeout.
 > 2. `mcp.ts` — Subgraph MCP client against `https://subgraphs.mcp.thegraph.com/sse` with header `Authorization: Bearer ${GRAPH_API_KEY}`. Expose `searchSubgraphs(keyword)` (discover deployments by keyword/contract) and `getSubgraphSchema(id)`. Use the `@modelcontextprotocol/sdk` SSE transport. **If the SSE transport fights you, do not burn more than 45 minutes** — fall back to the Gateway GraphQL path for discovery and note it in SKILL.md.
