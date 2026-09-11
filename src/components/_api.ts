@@ -16,7 +16,17 @@ export async function getWalletAssessment(address: string): Promise<ApiResult<Ri
 type ErrorPayload = { error?: { code?: string; message?: string } };
 
 async function parseResponse<T>(response: Response): Promise<T> {
-  const payload = await response.json() as T & ErrorPayload;
+  // Not every failure is our JSON error shape: a platform timeout (e.g. Vercel's
+  // maxDuration on a slow LLM call) returns an HTML page. Without this the UI
+  // would show "Unexpected token '<'" instead of what actually happened.
+  const text = await response.text();
+  let payload: T & ErrorPayload;
+  try {
+    payload = JSON.parse(text) as T & ErrorPayload;
+  } catch {
+    const hint = response.status === 504 ? "the request timed out on the server" : `unexpected ${response.headers.get("content-type") ?? "non-JSON"} response`;
+    throw new Error(`HTTP_${response.status}: ${hint}`);
+  }
   if (!response.ok) {
     const error = payload.error;
     throw new Error(`${error?.code ?? "REQUEST_FAILED"}: ${error?.message ?? "Request failed"}`);

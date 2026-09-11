@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import HumanGate from "@/components/HumanGate";
 import ChatPane from "@/components/ChatPane";
 import ReceiptTrail from "@/components/ReceiptTrail";
@@ -58,11 +58,23 @@ export default function Dashboard() {
     return () => window.removeEventListener("human-gate:approved", approve);
   }, []);
 
+  // The wallet the evidence panel shows. The agent puts it in payload.address
+  // (its system prompt and the server-side risk recompute both use that key);
+  // payload.wallet is kept for older actions. With no proposal yet, fall back to
+  // the address in the user's latest message — a plain "is 0x… safe?" question
+  // must still light up the LIVE evidence, mirroring the server's pre-fetch.
+  const evidenceAddress = useMemo(() => {
+    const payload = state.pendingAction?.payload;
+    const fromPayload = [payload?.address, payload?.wallet].find((value): value is string => typeof value === "string");
+    if (fromPayload) return fromPayload;
+    const latestUser = [...state.messages].reverse().find((message) => message.role === "user");
+    return latestUser?.content.match(/0x[a-fA-F0-9]{40}/)?.[0];
+  }, [state.pendingAction?.payload, state.messages]);
+
   useEffect(() => {
-    const address = state.pendingAction?.payload.wallet;
-    if (typeof address !== "string") return;
-    void getWalletAssessment(address).then((result) => setState((current) => ({ ...current, assessment: result.data, isMock: result.mocked })));
-  }, [state.pendingAction?.id, state.pendingAction?.payload.wallet]);
+    if (!evidenceAddress) return;
+    void getWalletAssessment(evidenceAddress).then((result) => setState((current) => ({ ...current, assessment: result.data, isMock: result.mocked })));
+  }, [evidenceAddress]);
 
   async function submitMessage(content: string) {
     const user: ChatMessage = { id: `user-${Date.now()}`, role: "user", content };
