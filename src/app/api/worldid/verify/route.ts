@@ -1,9 +1,12 @@
+import { hashSignal } from "@worldcoin/idkit-core/hashing";
 import { serverEnv } from "@/lib/env";
 import { RECEIPT_TTL_MS, type HumanGateReceipt } from "@/lib/types";
-import { getPendingAction } from "@/lib/worldid/pending";
+// Single source of truth for pending actions and receipts: the agent store is
+// where /api/agent/plan registers actions and where /api/agent/execute reads
+// receipts. A separate store here meant verify could never see a pending action.
+import { getPendingAction, saveReceipt } from "@/lib/agent/store";
 import { recordApproval } from "@/lib/worldid/continuity";
 import { hashAction } from "@/lib/worldid/hash";
-import { storeReceipt } from "@/lib/worldid/receipts";
 
 type VerifyBody = { rp_id: string; idkitResponse: unknown; actionId: string };
 
@@ -31,7 +34,10 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ error: "IDKit response has no credential response" }, { status: 400 });
   }
   const responseItem = body.idkitResponse.responses[0];
-  if (!isRecord(responseItem) || responseItem.signal_hash !== expectedHash) {
+  // IDKit reports signal_hash as the field-element hash OF the signal, not the
+  // signal itself — our signal is the actionHash, so compare against
+  // hashSignal(actionHash). A raw comparison can never match a real proof.
+  if (!isRecord(responseItem) || responseItem.signal_hash !== hashSignal(expectedHash)) {
     return Response.json({ error: "World ID signal does not match pending action" }, { status: 400 });
   }
 
@@ -64,6 +70,6 @@ export async function POST(request: Request): Promise<Response> {
     expiresAt: now + RECEIPT_TTL_MS,
     continuity: recordApproval(responseItem.nullifier),
   };
-  storeReceipt(receipt);
+  saveReceipt(receipt);
   return Response.json(receipt);
 }
