@@ -46,6 +46,14 @@ You **may import from** `src/lib/agent/store.ts` (`savePendingAction`, `getPendi
 `getReceipt`, `hasExecuted`), `src/lib/agent/deps.ts` (`graphDeps`), `src/lib/worldid/hash.ts`
 (`hashAction`) and `src/lib/types.ts` (`computeRequiresHuman`). **Call** them; don't edit them.
 
+**⚠️ ALWAYS `await` every store call**, e.g. `const action = await getPendingAction(id)`, even if
+the function you see is synchronous. The app is moving to Vercel, and the store is being migrated in
+parallel from local files to Redis, which makes every store function async. `await` on a plain value
+is harmless, so awaiting now keeps your code correct across that change. **Also, don't write to
+`.data/` or the filesystem directly.** Vercel's filesystem is read-only. For the run log (Part D), use
+whatever store helper exists when you get there, or write through a small function you own that I can
+redirect at merge.
+
 ## Git discipline (graded)
 - **Do NOT run `git checkout`, `git switch`, or `git branch`.** Sibling worktrees share this repo.
 - **≥ 4 small commits with real messages.** No mono-commit. Do not merge to `main`.
