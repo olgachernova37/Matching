@@ -12,6 +12,8 @@ export async function POST(request: Request): Promise<Response> {
   try {
     const body = await request.json() as { address?: unknown; intent?: unknown; costUsd?: unknown };
     if (typeof body.address !== "string" || typeof body.intent !== "string") return errorResponse("INVALID_REQUEST", "address and intent are required", 400);
+    // A malformed address is the caller's mistake (400), not an upstream outage (503).
+    if (!/^0x[a-fA-F0-9]{40}$/.test(body.address)) return errorResponse("INVALID_ADDRESS", "address must be a 20-byte Ethereum address", 400);
     const costUsd = body.costUsd === undefined ? 0.05 : Number(body.costUsd);
     if (!Number.isFinite(costUsd) || costUsd < 0) return errorResponse("INVALID_REQUEST", "costUsd must be a non-negative number", 400);
     const graph = await graphDeps();
@@ -20,7 +22,10 @@ export async function POST(request: Request): Promise<Response> {
     const payload = { address: body.address.toLowerCase(), intent: body.intent };
     const action: AgentAction = { id: randomUUID(), kind: "recipe_run", summary: body.intent, payload, riskScore: assessment.score, riskReasons: assessment.reasons, costUsd, requiresHuman: computeRequiresHuman(assessment.score, costUsd), createdAt: Date.now() };
     await savePendingAction(action);
-    const baseUrl = process.env.PUBLIC_BASE_URL || "http://localhost:3000";
+    // PUBLIC_BASE_URL wins when set; otherwise use the origin this request
+    // arrived on (echobrief.online in production) instead of a localhost link
+    // that is useless to an external agent.
+    const baseUrl = process.env.PUBLIC_BASE_URL || new URL(request.url).origin;
     return Response.json({ actionId: action.id, actionHash: hashAction(payload), riskScore: assessment.score, riskReasons: assessment.reasons, requiresHuman: action.requiresHuman, approvalUrl: `${baseUrl.replace(/\/$/, "")}/dashboard?action=${encodeURIComponent(action.id)}` });
   } catch (error) {
     return errorResponse("GRAPH_UNAVAILABLE", error instanceof Error ? error.message : "Graph unavailable", 503);

@@ -7,7 +7,7 @@ servers:
   - url: "{PUBLIC_BASE_URL}"
     variables:
       PUBLIC_BASE_URL:
-        default: http://localhost:3000
+        default: https://echobrief.online
 paths:
   /api/gateway/gate:
     post:
