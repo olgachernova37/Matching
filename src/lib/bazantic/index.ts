@@ -1,5 +1,7 @@
 import type { HumanGateReceipt, RecipeRef, RecipeRun } from "../types.ts";
-import { graphDeps } from "../agent/deps.ts";
+// Direct, not via agent/deps: deps.ts imports this module, so going through
+// it would be a circular import. The Graph is merged, so no seam is needed.
+import * as graph from "../graph/index.ts";
 import { kv } from "../kv.ts";
 import { findRecipe, recipes } from "./recipes.ts";
 import { createPaidFetch } from "./x402.ts";
@@ -27,7 +29,6 @@ export async function runRecipe(recipeId: string, input: object, receipt: HumanG
   }
 
   const address = typeof (input as Record<string, unknown>).address === "string" ? String((input as Record<string, unknown>).address) : "";
-  const graph = await graphDeps();
   const activity = await graph.getWalletActivity(address);
   const assessment = graph.assessRisk(activity);
   const steps: RecipeRun["steps"] = [{ name: "wallet activity", service: "The Graph", ok: true, output: activity }, { name: "risk assessment", service: "The Graph", ok: true, output: assessment }];

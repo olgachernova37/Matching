@@ -11,6 +11,7 @@ import type {
 // aliased value import breaks `node --test`. Relative resolves in both.
 import * as worldid from "../worldid/index.ts";
 import * as graph from "../graph/index.ts";
+import * as bazantic from "../bazantic/index.ts";
 
 /*
  * Dependency seam for the agent. Each module is wired with a STATIC import once
@@ -25,7 +26,9 @@ import * as graph from "../graph/index.ts";
  * Integration checklist:
  *   [x] @/lib/worldid  — T3 merged, wired statically below
  *   [x] @/lib/graph    — T2 merged, wired statically below
- *   [ ] @/lib/bazantic — T4: replace stubBazantic with `import * as bazantic from "../bazantic/index.ts"`
+ *   [x] @/lib/bazantic — T4 merged, wired statically below
+ *
+ * All three modules are live; no stubs remain.
  */
 
 type GraphDeps = {
@@ -36,16 +39,6 @@ type GraphDeps = {
 };
 type WorldDeps = { assertValidReceipt(receipt: HumanGateReceipt, action: AgentAction): Promise<void> };
 type BazanticDeps = { listRecipes(): Promise<RecipeRef[]>; runRecipe(recipeId: string, input: object, receipt: HumanGateReceipt): Promise<RecipeRun> };
-
-const unavailable = (moduleName: string): Error => new Error(`Dependency unavailable: ${moduleName} has not been merged`);
-
-// Stubs fail CLOSED and LOUD: they throw, and never return plausible data. A
-// stub that quietly returned numbers could reach the demo, and The Graph track
-// disqualifies mocked data outright.
-const stubBazantic: BazanticDeps = {
-  async listRecipes() { console.warn("[agent] STUB BAZANTIC: list_recipes unavailable"); throw unavailable("@/lib/bazantic"); },
-  async runRecipe() { console.error("[agent] STUB BAZANTIC: execution unavailable; no paid call made"); throw unavailable("@/lib/bazantic"); },
-};
 
 const world: WorldDeps = { assertValidReceipt: worldid.assertValidReceipt };
 const liveGraph: GraphDeps = {
@@ -58,4 +51,5 @@ const liveGraph: GraphDeps = {
 // Async signatures are kept so callers need no change when a stub is swapped out.
 export async function graphDeps(): Promise<GraphDeps> { return liveGraph; }
 export async function worldDeps(): Promise<WorldDeps> { return world; }
-export async function bazanticDeps(): Promise<BazanticDeps> { return stubBazantic; }
+const liveBazantic: BazanticDeps = { listRecipes: bazantic.listRecipes, runRecipe: bazantic.runRecipe };
+export async function bazanticDeps(): Promise<BazanticDeps> { return liveBazantic; }

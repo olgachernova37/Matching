@@ -16,8 +16,8 @@ test("execute refuses a non-gated action without a receipt", async () => {
 
 // Guards against the gate failing OPEN. If receipt validation were ever left
 // un-awaited, its rejection would float away and execution would fall through
-// to runRecipe — which (while Bazantic is stubbed) throws "Dependency
-// unavailable". Asserting the *hash mismatch* message proves the gate stopped
+// to runRecipe, which fails with some *other* error (this payload has no
+// address). Asserting the *hash mismatch* message proves the gate stopped
 // execution before any payment step was reached.
 test("execute rejects an invalid receipt at the gate, before any payment step", async () => {
   const gated: AgentAction = { ...action, id: `${action.id}-forged`, payload: { amount: 5 } };
