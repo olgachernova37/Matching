@@ -29,6 +29,7 @@ export async function runRecipe(recipeId: string, input: object, receipt: HumanG
   }
 
   const address = typeof (input as Record<string, unknown>).address === "string" ? String((input as Record<string, unknown>).address) : "";
+  const intent = typeof (input as Record<string, unknown>).intent === "string" ? String((input as Record<string, unknown>).intent) : `wallet-risk-trace for ${address}`;
   const activity = await graph.getWalletActivity(address);
   const assessment = graph.assessRisk(activity);
   const steps: RecipeRun["steps"] = [{ name: "wallet activity", service: "The Graph", ok: true, output: activity }, { name: "risk assessment", service: "The Graph", ok: true, output: assessment }];
@@ -39,7 +40,7 @@ export async function runRecipe(recipeId: string, input: object, receipt: HumanG
   if (gatewayUrl && endpoint) {
     try {
       const paidFetch = createPaidFetch();
-      const response = await paidFetch(`${gatewayUrl.replace(/\/$/, "")}/${endpoint.replace(/^\//, "")}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ address, assessment }) });
+      const response = await paidFetch(`${gatewayUrl.replace(/\/$/, "")}/${endpoint.replace(/^\//, "")}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ address, intent, assessment }) });
       if (!response.ok) throw new Error(`Bazantic gateway HTTP ${response.status}`);
       steps.push({ name: "gateway settlement", service: "Bazantic x402", ok: true, output: await response.json() });
       const result: RecipeRun = { recipeId, status: "success", steps, costUsd };
