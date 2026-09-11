@@ -1,6 +1,11 @@
 import { plan } from "@/lib/agent";
 import type { ChatMessage } from "@/lib/types";
 
+// A tool loop makes several LLM round trips; on a congested free tier one call
+// has been measured at 20-35s. Without this, Vercel cuts the request off at its
+// default limit mid-conversation. (Hobby plans cap this; verify on deploy.)
+export const maxDuration = 120;
+
 export async function POST(request: Request): Promise<Response> {
   try {
     const body: unknown = await request.json();
