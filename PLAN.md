@@ -168,7 +168,10 @@ User: "Is 0xABC… safe to send 5 ETH to?"
 ## 2. Architecture
 
 ### Stack
-- **Next.js 15 (App Router) + TypeScript + Tailwind** — single deployable, API routes = backend.
+- **Next.js 16.3.4 (App Router) + React 19.2.8 + TypeScript + Tailwind 4** — single deployable, API routes = backend.
+  ⚠️ **Next 16 has breaking changes vs. model training data.** The repo's `AGENTS.md` says so and
+  points at `node_modules/next/dist/docs/` — **read the relevant guide there before writing routes
+  or layouts**, don't code Next from memory. Note `LayoutProps<"/">` typed routes are new here.
 - **`@worldcoin/idkit`** — Selfie Check via `selfieCheckLegacy({ signal })` preset.
 - **The Graph** — Subgraph MCP (`https://subgraphs.mcp.thegraph.com/sse`, `Authorization: Bearer <gateway key>`) **and** direct Gateway GraphQL as the reliable fallback path.
 - **Bazantic** — hosted MCP server + x402 gateway, config in `bazantic-recipes.json`.
@@ -370,13 +373,20 @@ T0 (human) ──▶ T1 (scaffold + contracts)  ◀── MUST COMPLETE BEFORE A
 
 ---
 
-### 🟦 T1 — Scaffold + shared contracts `[BLOCKING · ~1h · do alone]`
+### ✅ T1 — Scaffold + shared contracts `[DONE — merged to main]`
+> Delivered: Next 16.3.4 / React 19.2.8 / Tailwind 4, `src/lib/types.ts` (frozen contract),
+> `src/lib/env.ts` (lazy server secrets + mock switches), `.env.example`, console theme tokens,
+> `notes/worldid-friction.md` seeded. `npm run build` and `tsc --noEmit` both clean.
+> **Branch from `main` — do not re-scaffold.** Original brief kept below for reference.
+
+<details><summary>Original T1 brief</summary>
 **Owns:** `package.json`, `tsconfig.json`, `tailwind.config.ts`, `next.config.ts`, `src/app/layout.tsx`, `src/lib/types.ts`, `src/lib/env.ts`, `.env.example`, `.gitignore`
 
 **Prompt:**
 > Scaffold a Next.js 15 App Router + TypeScript + Tailwind project at the repo root (`npx create-next-app@latest . --ts --tailwind --app --src-dir --no-import-alias`, keep it minimal, delete boilerplate CSS/demo content). Then create `src/lib/types.ts` containing **verbatim** the types from PLAN.md §3, and `src/lib/env.ts` which reads and validates with zod: `NEXT_PUBLIC_WLD_APP_ID`, `NEXT_PUBLIC_WLD_ACTION`, `WLD_RP_ID`, `WLD_RP_PRIVATE_KEY`, `WLD_API_KEY`, `NEXT_PUBLIC_WLD_ENV` (default `sandbox`), `GRAPH_API_KEY`, `BAZANTIC_API_KEY`, `BAZANTIC_GATEWAY_URL`, `ANTHROPIC_API_KEY`. Missing vars must produce a clear startup error naming the variable, never a silent undefined. Write `.env.example` with every key and a one-line comment on where to get it. Add `viem` (for keccak256) and `zod`. Verify `npm run build` passes, then commit.
 
 **Acceptance:** `npm run dev` serves a blank styled page; `npm run build` clean; `src/lib/types.ts` matches §3 exactly.
+</details>
 
 ---
 
