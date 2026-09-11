@@ -6,10 +6,12 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "graph:smoke": "node scripts/graph-smoke.ts"
   },
   "dependencies": {
     "@google/genai": "^2.22.0",
+    "@modelcontextprotocol/sdk": "^1.30.0",
     "@upstash/redis": "^1.38.4",
     "@worldcoin/idkit": "^4.2.3",
     "@worldcoin/idkit-core": "^4.2.4",
