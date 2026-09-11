@@ -75,11 +75,16 @@ export function serverEnv(): ServerEnv {
     get(_target, key) {
       if (typeof key !== "string" || !(key in serverSchema.shape)) return undefined;
       const field = serverSchema.shape[key as keyof ServerEnv];
-      const parsed = field.safeParse(process.env[key]);
+      // Trim, and treat an empty value as unset. Hosting dashboards make both
+      // easy to get wrong: an empty GEMINI_MODEL on Vercel rejected the whole
+      // planner instead of falling back to its default, and a key pasted with
+      // a trailing newline would fail authentication with no obvious cause.
+      const raw = process.env[key]?.trim();
+      const parsed = field.safeParse(raw === "" ? undefined : raw);
       if (!parsed.success) {
         throw new Error(
           `Invalid server environment: ${key} — ${parsed.error.issues[0]?.message ?? "invalid"}. ` +
-            "Fix .env.local (see .env.example).",
+            "Set it in .env.local locally, or in the hosting dashboard's environment variables (then redeploy).",
         );
       }
       return parsed.data;
