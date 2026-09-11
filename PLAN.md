@@ -437,7 +437,9 @@ T0 (human) ──▶ T1 (scaffold + contracts)  ◀── MUST COMPLETE BEFORE A
 > - **Primary subgraph: `5zvR82QoaXYFyDEKLZ9t6v9adgnptxYpKpSbxtgVENFV`** (canonical Uniswap V3
 >   mainnet) — `swaps` filterable by `origin`, verified.
 > - `8e4dRt4P4WHXnKbEq7STaQfU2g99WZ5S4w39f2PcUTjD` is a positions/LP deployment with **no `swaps`**.
-> - Token API needs a separate Pinax JWT — skip. MCP `/sse` exists but its handshake stalled — timebox.
+> - Token API needs a separate Pinax JWT — skip.
+> - **Subgraph MCP works** (SSE, SDK 1.30.0, 621ms connect, 9 tools). MCP powers the agent's
+>   discovery tools; the Gateway powers the deterministic risk score.
 > - An empty result means *no Uniswap V3 history*, **not** *new wallet*. Reason strings must say so.
 
 **Original brief (kept for reference):**

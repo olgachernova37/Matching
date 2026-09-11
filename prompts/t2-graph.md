@@ -73,11 +73,14 @@ Bearer header**, which is what was verified.
   Uniswap's NonfungiblePositionManager contract (`0xc36442b4…`), so never treat `owner` as the user.
 - Optional enrichment: LP activity as an extra signal. **Not required.**
 
-**Things that are NOT usable — do not spend time on them:**
+**Subgraph MCP — ✅ VERIFIED WORKING.** Connected in 621ms with our key via classic SSE transport,
+`@modelcontextprotocol/sdk` **1.30.0**. Exact working code and the full tool list are in Part D.
+
+**Not usable — do not spend time on it:**
 - **Token API** — its docs now redirect to Pinax's own API, which needs a *separate Pinax JWT*, not
   our Studio key. Skip it.
-- **Subgraph MCP** at `https://subgraphs.mcp.thegraph.com/sse` — the route exists (POST returns 405,
-  so it wants a GET stream) but the SSE handshake sent no data within 6s in testing. See Part D.
+- `graphprotocol/subgraphs-skills` and `streamingfast/substreams-skills` are for *building* indexers.
+  We *query* existing ones. Useful only as the `SKILL.md` format reference (Part F).
 
 ---
 
@@ -134,15 +137,55 @@ a CEX, has zero Uniswap swaps. Reason strings must say exactly what was observed
 
 Same for `firstSeen`: it is **first seen *on Uniswap V3***, not wallet creation. Label it that way.
 
-## Part D — Subgraph MCP (`src/lib/graph/mcp.ts`) — ⏱ HARD 45-MINUTE TIMEBOX
+## Part D — Subgraph MCP (`src/lib/graph/mcp.ts`) — ✅ verified, build it properly
 
-`searchSubgraphs(keyword): Promise<SubgraphRef[]>` and `getSubgraphSchema(id)`, via
-`@modelcontextprotocol/sdk` against `https://subgraphs.mcp.thegraph.com/sse` with
-`Authorization: Bearer <GRAPH_API_KEY>`.
+**Why it matters:** our track is *"Best AI Tooling or AI Use Case"*. MCP lets the **agent itself**
+discover subgraphs, read schemas and run queries — that is the AI-tooling story. Two roles, both
+load-bearing:
 
-**Start a timer. If it isn't working at 45 minutes, stop.** Fall back to Gateway GraphQL for
-everything, record exactly what failed in `SKILL.md`, and move on. The prize requires *live Graph
-data* — it does not require MCP specifically. Do not let this sink the rest of the task.
+| Path | Used by | Why |
+|---|---|---|
+| **MCP** | the agent's exploratory tools (T5 consumes these) | agent-driven discovery = the AI angle |
+| **Gateway GraphQL** (Part A) | the deterministic risk path | fixed query, fast, predictable for the demo |
+
+Keep the risk score on the Gateway path — a scripted demo must not depend on an agent choosing the
+right subgraph. MCP gives the agent reach; Gateway gives the score reliability.
+
+**Exact working connection** (verified 2026-09-11 against SDK 1.30.0 — note headers must be injected
+into *both* the SSE stream and the POSTed messages, hence the custom `fetch`):
+
+    import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+    import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
+
+    const headers = { Authorization: `Bearer ${serverEnv().GRAPH_API_KEY}` };
+    const transport = new SSEClientTransport(new URL("https://subgraphs.mcp.thegraph.com/sse"), {
+      eventSourceInit: { fetch: (url, init) => fetch(url, { ...init, headers: { ...init?.headers, ...headers } }) },
+      requestInit: { headers },
+    });
+    const client = new Client({ name: "human-gated-copilot", version: "0.1.0" });
+    await client.connect(transport);
+
+**The server's actual tools** (from `listTools()`, verbatim names and args):
+
+| Tool | Args | Use it for |
+|---|---|---|
+| `search_subgraphs_by_keyword` | `keyword` | discovery → `searchSubgraphs()` |
+| `get_schema_by_subgraph_id` | `subgraph_id` | schema → `getSubgraphSchema()` |
+| `execute_query_by_subgraph_id` | `query, subgraph_id, variables` | agent-run queries |
+| `get_top_subgraph_deployments` | `chain, contract_address` | find subgraphs indexing a contract. **Use `'mainnet'` for Ethereum**, per the tool's own description |
+| `get_deployment_30day_query_counts` | `ipfs_hashes` | usage signal → `SubgraphRef.queryVolume` |
+| `get_schema_by_ipfs_hash` / `get_schema_by_deployment_id` | … | alternate schema lookups |
+| `execute_query_by_ipfs_hash` / `execute_query_by_deployment_id` | … | alternate query paths |
+
+Implement at minimum `searchSubgraphs(keyword)`, `getSubgraphSchema(id)`, and
+`queryViaMcp(subgraphId, query, variables)`. Also export a thin `mcpTools()` list the agent layer
+(T5) can hand to the model — **name them exactly as the server does** so tool calls map 1:1.
+
+**Connection lifecycle:** SSE holds an open stream. Reuse one connected client per server process
+(lazy singleton), reconnect on failure, and `close()` cleanly. Don't open a stream per request.
+
+**MCP tool results are text content** — parse them defensively; a malformed result must throw with
+context, never return partial data as if complete.
 
 ## Part E — route + smoke test
 
@@ -154,9 +197,24 @@ data* — it does not require MCP specifically. Do not let this sink the rest of
 
 ## Part F — `SKILL.md` (The Graph track asks for README or SKILL.md)
 
-Create `SKILL.md` at the repo root: which subgraphs you query and why, how the data drives the risk
-decision (that's the "load-bearing" argument), your counterparty definition, the scoring rules, and
-how another agent could reuse this. Include what happened with MCP, honestly.
+Create `SKILL.md` at the repo root **in the official Graph skills format** — match
+[`graphprotocol/subgraphs-skills`](https://github.com/graphprotocol/subgraphs-skills), which opens
+with this frontmatter:
+
+    ---
+    name: wallet-risk-graph
+    description: This skill should be used when the user asks to assess the risk of an Ethereum
+      address, check a wallet's on-chain history, or decide whether an action needs human approval…
+    version: 1.0.0
+    ---
+
+The `description` follows their convention: **"This skill should be used when…"** plus concrete
+trigger phrases. Matching the official format signals we read their ecosystem, and makes the skill
+genuinely reusable by other agents — which the judging rewards.
+
+Body: which subgraphs you query and why; how the data drives the risk decision (the "load-bearing"
+argument); the MCP tools used and how an agent calls them; your counterparty definition; the scoring
+rules; and how another agent reuses this.
 
 ---
 
@@ -183,11 +241,13 @@ There must be no way for a fixture to render as live.
 - [ ] Router contracts don't appear as "top counterparties"
 - [ ] `source.subgraphId` + `source.queriedAt` populated on every live result
 - [ ] Route returns structured 400/502 errors
-- [ ] MCP working, **or** abandoned at 45 min and documented
-- [ ] `SKILL.md` written
+- [ ] MCP client connects, reuses one connection, and `searchSubgraphs("uniswap")` returns real results
+- [ ] `mcpTools()` exported with the server's exact tool names, ready for the agent layer
+- [ ] Risk score stays on the deterministic Gateway path
+- [ ] `SKILL.md` written in the official frontmatter format
 - [ ] No mock path reachable by default
 - [ ] `npm run build` clean, `npx tsc --noEmit` clean, tests green
 - [ ] ≥ 4 commits, no files outside ownership touched
 
-Report at the end: what you built, whether MCP worked, your counterparty definition, and any
+Report at the end: what you built, which MCP tools you wired, your counterparty definition, and any
 contract change you wanted in `src/lib/types.ts` but did not make.
