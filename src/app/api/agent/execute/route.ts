@@ -7,9 +7,9 @@ export async function POST(request: Request): Promise<Response> {
     if (!body || typeof body !== "object" || !("actionId" in body) || typeof body.actionId !== "string") {
       return Response.json({ error: { code: "INVALID_REQUEST", message: "actionId is required" } }, { status: 400 });
     }
-    const action = getPendingAction(body.actionId);
+    const action = await getPendingAction(body.actionId);
     if (!action) return Response.json({ error: { code: "ACTION_NOT_FOUND", message: "Pending action not found" } }, { status: 404 });
-    const receipt = getReceipt(body.actionId);
+    const receipt = await getReceipt(body.actionId);
     return Response.json(await execute(action, receipt));
   } catch (error) {
     const message = error instanceof Error ? error.message : "Agent execution failed";

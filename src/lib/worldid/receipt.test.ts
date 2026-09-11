@@ -12,25 +12,35 @@ function receiptFor(current: AgentAction, overrides: Partial<HumanGateReceipt> =
   return { actionId: current.id, actionHash: hashAction(current.payload), nullifierHash: "0xnullifier", credentialType: "selfie_check", verifiedAt: Date.now(), expiresAt: Date.now() + 60_000, ...overrides };
 }
 
-test("tampering with one payload byte invalidates the receipt", () => {
-  const current = action(`tamper-${Date.now()}`);
+const unique = (prefix: string) => `${prefix}-${Date.now()}-${Math.random()}`;
+
+test("tampering with one payload byte invalidates the receipt", async () => {
+  const current = action(unique("tamper"));
   const receipt = receiptFor(current);
   current.payload = { amount: 6, destination: "0xabc" };
-  assert.throws(() => assertValidReceipt(receipt, current), /actionHash mismatch/);
+  await assert.rejects(assertValidReceipt(receipt, current), /actionHash mismatch/);
 });
 
-test("receipt validation has distinct expiry, id, hash, and replay errors", () => {
-  const expired = action(`expired-${Date.now()}`);
-  assert.throws(() => assertValidReceipt(receiptFor(expired, { expiresAt: Date.now() - 1 }), expired), /expired/);
+test("receipt validation has distinct expiry, id, hash, and replay errors", async () => {
+  const expired = action(unique("expired"));
+  await assert.rejects(assertValidReceipt(receiptFor(expired, { expiresAt: Date.now() - 1 }), expired), /expired/);
 
-  const wrongId = action(`wrong-id-${Date.now()}`);
-  assert.throws(() => assertValidReceipt({ ...receiptFor(wrongId), actionId: "other" }, wrongId), /actionId mismatch/);
+  const wrongId = action(unique("wrong-id"));
+  await assert.rejects(assertValidReceipt({ ...receiptFor(wrongId), actionId: "other" }, wrongId), /actionId mismatch/);
 
-  const wrongHash = action(`wrong-hash-${Date.now()}`);
-  assert.throws(() => assertValidReceipt({ ...receiptFor(wrongHash), actionHash: "0xwrong" }, wrongHash), /actionHash mismatch/);
+  const wrongHash = action(unique("wrong-hash"));
+  await assert.rejects(assertValidReceipt({ ...receiptFor(wrongHash), actionHash: "0xwrong" }, wrongHash), /actionHash mismatch/);
 
-  const replay = action(`replay-${Date.now()}`);
+  const replay = action(unique("replay"));
   const valid = receiptFor(replay);
-  assert.doesNotThrow(() => assertValidReceipt(valid, replay));
-  assert.throws(() => assertValidReceipt(valid, replay), /already executed/);
+  await assert.doesNotReject(assertValidReceipt(valid, replay));
+  await assert.rejects(assertValidReceipt(valid, replay), /already executed/);
+});
+
+test("concurrent validations of one action: exactly one wins the claim", async () => {
+  const current = action(unique("race"));
+  const receipt = receiptFor(current);
+  const results = await Promise.allSettled(Array.from({ length: 8 }, () => assertValidReceipt(receipt, current)));
+  assert.equal(results.filter((r) => r.status === "fulfilled").length, 1);
+  assert.equal(results.filter((r) => r.status === "rejected").length, 7);
 });

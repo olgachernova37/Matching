@@ -1,29 +1,10 @@
-import fs from "node:fs";
-import path from "node:path";
+import { kv } from "../kv.ts";
 import { CREDENTIAL_VALIDITY_DAYS, type ContinuityInfo } from "../types.ts";
 
 type HumanRecord = { firstSeenAt: number; approvalCount: number };
-type HumanLedger = Record<string, HumanRecord>;
 
-const ledgerPath = path.join(process.cwd(), ".data", "humans.json");
+const humanKey = (nullifierHash: string) => `human:${nullifierHash}`;
 const dayMs = 24 * 60 * 60 * 1000;
-
-function readLedger(): HumanLedger {
-  try {
-    const parsed: unknown = JSON.parse(fs.readFileSync(ledgerPath, "utf8"));
-    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return {};
-    return parsed as HumanLedger;
-  } catch {
-    return {};
-  }
-}
-
-function writeLedger(ledger: HumanLedger): void {
-  fs.mkdirSync(path.dirname(ledgerPath), { recursive: true });
-  const temporaryPath = `${ledgerPath}.tmp`;
-  fs.writeFileSync(temporaryPath, JSON.stringify(ledger, null, 2), "utf8");
-  fs.renameSync(temporaryPath, ledgerPath);
-}
 
 function toContinuity(record: HumanRecord | undefined, now = Date.now(), isReturning = record ? record.approvalCount > 0 : false): ContinuityInfo {
   if (!record) {
@@ -39,17 +20,24 @@ function toContinuity(record: HumanRecord | undefined, now = Date.now(), isRetur
   };
 }
 
-export function getContinuity(nullifierHash: string): ContinuityInfo {
-  return toContinuity(readLedger()[nullifierHash]);
+/** A record that is missing or malformed is treated as absent, never as a crash. */
+function asRecord(value: unknown): HumanRecord | undefined {
+  if (!value || typeof value !== "object") return undefined;
+  const { firstSeenAt, approvalCount } = value as Partial<HumanRecord>;
+  return typeof firstSeenAt === "number" && typeof approvalCount === "number" ? { firstSeenAt, approvalCount } : undefined;
 }
 
-export function recordApproval(nullifierHash: string): ContinuityInfo {
-  const ledger = readLedger();
-  const existing = ledger[nullifierHash];
+export async function getContinuity(nullifierHash: string): Promise<ContinuityInfo> {
+  return toContinuity(asRecord(await kv().get(humanKey(nullifierHash))));
+}
+
+// No TTL: continuity is the point. Selfie Check's own 90-day validity window is
+// applied when reporting daysKnown, not by expiring the record.
+export async function recordApproval(nullifierHash: string): Promise<ContinuityInfo> {
+  const existing = asRecord(await kv().get(humanKey(nullifierHash)));
   const record = existing
     ? { firstSeenAt: existing.firstSeenAt, approvalCount: existing.approvalCount + 1 }
     : { firstSeenAt: Date.now(), approvalCount: 1 };
-  ledger[nullifierHash] = record;
-  writeLedger(ledger);
+  await kv().set(humanKey(nullifierHash), record);
   return toContinuity(record, Date.now(), Boolean(existing && existing.approvalCount > 0));
 }

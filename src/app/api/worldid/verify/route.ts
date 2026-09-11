@@ -26,7 +26,7 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const action = getPendingAction(body.actionId);
+  const action = await getPendingAction(body.actionId);
   if (!action) return Response.json({ error: "Pending action not found" }, { status: 404 });
 
   const expectedHash = hashAction(action.payload);
@@ -68,8 +68,8 @@ export async function POST(request: Request): Promise<Response> {
     credentialType: responseItem.identifier === "selfie" ? "selfie_check" : "device",
     verifiedAt: now,
     expiresAt: now + RECEIPT_TTL_MS,
-    continuity: recordApproval(responseItem.nullifier),
+    continuity: await recordApproval(responseItem.nullifier),
   };
-  saveReceipt(receipt);
+  await saveReceipt(receipt);
   return Response.json(receipt);
 }

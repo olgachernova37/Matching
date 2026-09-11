@@ -33,7 +33,7 @@ type GraphDeps = {
   getWalletActivity(address: string): Promise<WalletActivity>;
   assessRisk(activity: WalletActivity): RiskAssessment;
 };
-type WorldDeps = { assertValidReceipt(receipt: HumanGateReceipt, action: AgentAction): void };
+type WorldDeps = { assertValidReceipt(receipt: HumanGateReceipt, action: AgentAction): Promise<void> };
 type BazanticDeps = { listRecipes(): Promise<RecipeRef[]>; runRecipe(recipeId: string, input: object, receipt: HumanGateReceipt): Promise<RecipeRun> };
 
 const unavailable = (moduleName: string): Error => new Error(`Dependency unavailable: ${moduleName} has not been merged`);
