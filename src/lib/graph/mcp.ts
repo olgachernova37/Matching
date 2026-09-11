@@ -1,6 +1,6 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
-import { serverEnv } from "@/lib/env";
+import { serverEnv } from "../env.ts";
 import type { SubgraphRef } from "@/lib/types";
 
 type McpContent = { type?: string; text?: string };

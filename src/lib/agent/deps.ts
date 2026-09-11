@@ -10,6 +10,7 @@ import type {
 // Relative, not "@/lib/worldid": the alias only exists inside the bundler, so an
 // aliased value import breaks `node --test`. Relative resolves in both.
 import * as worldid from "../worldid/index.ts";
+import * as graph from "../graph/index.ts";
 
 /*
  * Dependency seam for the agent. Each module is wired with a STATIC import once
@@ -23,8 +24,8 @@ import * as worldid from "../worldid/index.ts";
  *
  * Integration checklist:
  *   [x] @/lib/worldid  — T3 merged, wired statically below
- *   [ ] @/lib/graph    — T2: replace stubGraph with `import * as graph from "../graph/index.ts"`
- *   [ ] @/lib/bazantic — T4: replace stubBazantic the same way
+ *   [x] @/lib/graph    — T2 merged, wired statically below
+ *   [ ] @/lib/bazantic — T4: replace stubBazantic with `import * as bazantic from "../bazantic/index.ts"`
  */
 
 type GraphDeps = {
@@ -41,21 +42,20 @@ const unavailable = (moduleName: string): Error => new Error(`Dependency unavail
 // Stubs fail CLOSED and LOUD: they throw, and never return plausible data. A
 // stub that quietly returned numbers could reach the demo, and The Graph track
 // disqualifies mocked data outright.
-const stubGraph: GraphDeps = {
-  async searchSubgraphs() { console.warn("[agent] STUB GRAPH: search_subgraphs unavailable; no live data used"); throw unavailable("@/lib/graph"); },
-  async runGraphQL() { console.warn("[agent] STUB GRAPH: query_subgraph unavailable; no live data used"); throw unavailable("@/lib/graph"); },
-  async getWalletActivity() { console.warn("[agent] STUB GRAPH: get_wallet_activity unavailable; no live data used"); throw unavailable("@/lib/graph"); },
-  assessRisk() { console.warn("[agent] STUB GRAPH: assess_risk unavailable; no live data used"); throw unavailable("@/lib/graph"); },
-};
-
 const stubBazantic: BazanticDeps = {
   async listRecipes() { console.warn("[agent] STUB BAZANTIC: list_recipes unavailable"); throw unavailable("@/lib/bazantic"); },
   async runRecipe() { console.error("[agent] STUB BAZANTIC: execution unavailable; no paid call made"); throw unavailable("@/lib/bazantic"); },
 };
 
 const world: WorldDeps = { assertValidReceipt: worldid.assertValidReceipt };
+const liveGraph: GraphDeps = {
+  searchSubgraphs: graph.searchSubgraphs,
+  runGraphQL: graph.runGraphQL,
+  getWalletActivity: graph.getWalletActivity,
+  assessRisk: graph.assessRisk,
+};
 
 // Async signatures are kept so callers need no change when a stub is swapped out.
-export async function graphDeps(): Promise<GraphDeps> { return stubGraph; }
+export async function graphDeps(): Promise<GraphDeps> { return liveGraph; }
 export async function worldDeps(): Promise<WorldDeps> { return world; }
 export async function bazanticDeps(): Promise<BazanticDeps> { return stubBazantic; }
