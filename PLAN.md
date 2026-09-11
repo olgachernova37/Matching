@@ -61,6 +61,30 @@ Why desktop web:
 **Do not build a World Mini App.** It would force the console into a phone viewport, add unfamiliar
 scope with ~46h left, and weaken the Graph/Bazantic surfaces.
 
+### 🔑 No user wallet (settled — do not revisit)
+**Our app never connects an end-user wallet.** No wallet-connect, no wagmi, no RainbowKit, no
+signature prompts, no seed phrases. **Do not add a wallet connection library** — it is wasted hours
+and it muddies the pitch.
+
+- Addresses the user asks about are **plain strings typed into chat**. We read *public* on-chain data
+  about arbitrary addresses through The Graph; that needs no relationship with those addresses.
+- The only wallets in this project are **developer-side infrastructure**:
+  - **Subgraph Studio login** — Studio authenticates by wallet, so you need *a* wallet to get the
+    Graph API key. **Zero funds required.** Use a fresh burner; it ends up in `.env.local`.
+  - **x402 settlement** for the Bazantic gateway — **❓ OPEN QUESTION, unresolved.** Probably USDC on
+    Base, possibly Base Sepolia (faucet tokens fine) or possibly mainnet (a few real cents).
+    **Nobody has checked yet — that's T0.6c. Do not collect tokens before checking which network.**
+- Pitch line worth using in the README and video: **the human gate is a face, not a private key.**
+
+### 🔐 How the two World ID fields are used (get this backwards and both properties die)
+| Field | Value | Job |
+|---|---|---|
+| `action` | constant, e.g. `"human-gate"` | Scopes the nullifier, so the same person always yields the same `nullifierHash` → our **continuity** signal |
+| `signal` | `keccak256(canonical(action.payload))`, different every time | Binds the proof to the exact payload → our **tamper-proof** claim |
+
+We never receive biometric data — World performs the camera check and returns a proof plus the
+nullifier. State this plainly in the README; it is a real privacy property.
+
 **Sandbox user-state matrix (test all three, they are what `FEEDBACK.md` is graded on):**
 - **Hot** — World ID already installed → straight to face matching (or enrollment if new to Selfie Check).
 - **Cold** — new user: install → create account → Selfie Check.
@@ -366,7 +390,20 @@ T0 (human) ──▶ T1 (scaffold + contracts)  ◀── MUST COMPLETE BEFORE A
 
 ### Parallelism rules (critical for multi-agent work)
 1. **File ownership is exclusive.** Each task lists owned paths. An agent never edits a path it does not own. If it needs a change elsewhere, it reports it instead.
-2. **One git branch per task:** `feat/t2-graph`, `feat/t3-worldid`, … Merge into `main` as each lands.
+2. **🚨 One git WORKTREE per task — a branch is not enough.**
+   Git checks out one branch per *working directory*. Two agents started in `/workspaces/Matching`
+   share one tree: they see each other's half-written files, and a `git checkout` by one yanks the
+   branch out from under the others. **Branch isolation without directory isolation is not
+   isolation.** Before starting each agent:
+   ```
+   git worktree add /workspaces/matching-t2 -b feat/t2-graph main
+   cd /workspaces/matching-t2 && npm install       # ~1 min, npm cache makes it cheap
+   ```
+   Then point that agent at `/workspaces/matching-t2` as its working directory. Merge into `main`
+   as each lands, then `git worktree remove /workspaces/matching-t2`.
+   Do **not** symlink `node_modules` between worktrees — one agent installing a dependency would
+   silently mutate every other agent's tree.
+   *(The main checkout `/workspaces/Matching` counts as one worktree, so one agent may use it.)*
 3. **Commit small and often.** ETHGlobal explicitly penalises a single last-minute mono-commit. Target ≥ 4 commits per task with real messages.
 4. **`src/lib/types.ts` is frozen after T1.** Only the human edits it.
 5. Every agent must leave its module working standalone: if a dependency isn't merged yet, code against the interface and stub behind `process.env.MOCK_<X>=1`.

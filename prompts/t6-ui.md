@@ -33,7 +33,9 @@ Build the landing page and the operator console.
 - `PLAN.md`, `requirements.md`
 
 ### Git discipline (this is graded)
-- Branch from `main`: `git checkout main && git pull && git checkout -b feat/t6-ui`
+- **You are already on your own branch, in your own git worktree. Do NOT run `git checkout`,
+  `git switch`, or `git branch`.** Other agents are working in sibling worktrees of the same repo;
+  switching branches disrupts them. Just commit where you are.
 - **Make at least 4 small commits with real messages.** ETHGlobal explicitly penalises a single
   last-minute mono-commit. Do not squash your work into one commit.
 - Do not merge to `main` yourself; leave the branch for the human.
