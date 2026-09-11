@@ -26,17 +26,35 @@ export interface KV {
   append(key: string, value: unknown): Promise<void>;
 }
 
-const redisConfigured = Boolean(
-  (process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL) &&
-    (process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN),
-);
+/**
+ * Finds Upstash REST credentials under whatever names they were injected.
+ * Vercel's Upstash integration lets the user choose a custom variable prefix
+ * (its default is "STORAGE", giving e.g. STORAGE_REST_API_URL), so the standard
+ * names are tried first and then any <PREFIX>_REST_API_URL / _TOKEN pair.
+ */
+function redisCredentials(): { url: string; token: string } | undefined {
+  const env = process.env;
+  for (const [urlKey, tokenKey] of [
+    ["UPSTASH_REDIS_REST_URL", "UPSTASH_REDIS_REST_TOKEN"],
+    ["KV_REST_API_URL", "KV_REST_API_TOKEN"],
+  ]) {
+    if (env[urlKey] && env[tokenKey]) return { url: env[urlKey], token: env[tokenKey] };
+  }
+  for (const urlKey of Object.keys(env).sort()) {
+    if (!urlKey.endsWith("_REST_API_URL")) continue;
+    const token = env[urlKey.replace(/_REST_API_URL$/, "_REST_API_TOKEN")];
+    const url = env[urlKey];
+    if (url && token) return { url, token };
+  }
+  return undefined;
+}
+
+const redisConfigured = Boolean(redisCredentials());
 
 // ------------------------------------------------------------------- redis
 
 function redisKV(): KV {
-  // Reads UPSTASH_REDIS_REST_* or KV_REST_API_* — whichever the Vercel
-  // Marketplace integration injected.
-  const redis = Redis.fromEnv();
+  const redis = new Redis(redisCredentials()!);
   return {
     async get<T>(key: string) {
       const value = await redis.get<T>(key);
@@ -121,8 +139,9 @@ function select(): KV {
   if (process.env.VERCEL) {
     // Fail with the actual cause, instead of an EROFS crash on the first write.
     throw new Error(
-      "No Redis configured on Vercel. Add the Upstash Redis integration (Vercel Marketplace) so " +
-        "UPSTASH_REDIS_REST_URL/TOKEN or KV_REST_API_URL/TOKEN are set. The local file store cannot run on Vercel.",
+      "No Redis configured on Vercel. Connect the Upstash for Redis integration to this project " +
+        "(any variable prefix works: <PREFIX>_REST_API_URL + <PREFIX>_REST_API_TOKEN), then redeploy. " +
+        "The local file store cannot run on Vercel.",
     );
   }
   return fileKV(process.env.KV_DIR ?? path.join(process.cwd(), ".data", "kv"));
