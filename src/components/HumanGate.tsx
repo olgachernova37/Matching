@@ -61,15 +61,15 @@ export default function HumanGate({ action }: HumanGateProps) {
   return (
     <div>
       {!confirmed ? (
-        <button type="button" className="w-full border border-brand bg-brand px-4 py-3 text-sm font-semibold text-background hover:bg-transparent hover:text-brand" onClick={() => { setError(null); setConfirmed(true); }}>
+        <button type="button" className="w-full rounded-xl bg-brand px-4 py-3 text-sm font-semibold text-background transition-opacity hover:opacity-85" onClick={() => { setError(null); setConfirmed(true); }}>
           Approve with Selfie Check
         </button>
       ) : rpContext ? (
         <IDKitInviteCodeRequestWidget open={open} onOpenChange={setOpen} app_id={clientEnv.NEXT_PUBLIC_WLD_APP_ID as `app_${string}`} action={clientEnv.NEXT_PUBLIC_WLD_ACTION} rp_context={rpContext} allow_legacy_proofs={true} environment={clientEnv.NEXT_PUBLIC_WLD_ENV} preset={preset} onSuccess={handleSuccess} onError={() => { console.warn("[World ID] Selfie Check is unavailable; falling back to standard device verification."); setFallback(true); setError("Selfie Check is not enabled for this app; standard World ID verification is available."); }} />
       ) : (
-        <p className="border border-border bg-panel-raised px-4 py-3 text-center font-mono text-xs text-muted">Preparing secure World ID context...</p>
+        <p className="rounded-xl border border-border bg-panel-raised px-4 py-3 text-center text-xs text-muted">Preparing secure World ID context...</p>
       )}
-      {confirmed && <div className="mt-3 border border-border bg-panel p-4 text-sm"><p className="font-mono text-[10px] uppercase tracking-[0.12em] text-brand">Action to approve</p><p className="mt-2 text-foreground">{action.summary}</p><div className="mt-3 grid gap-2 font-mono text-xs text-muted"><span>cost: ${action.costUsd.toFixed(2)}</span><span>risk score: {action.riskScore}/100</span><span>action hash: {truncate(signal)}</span></div><p className="mt-3 text-xs text-muted">Selfie Check raises the cost of automated and repeated abuse.</p></div>}
+      {confirmed && <div className="mt-3 rounded-xl border border-border bg-panel p-4 text-sm"><p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-brand">Action to approve</p><p className="mt-2 text-foreground">{action.summary}</p><div className="mt-3 grid gap-2 font-mono text-xs text-muted"><span>cost: ${action.costUsd.toFixed(2)}</span><span>risk score: {action.riskScore}/100</span><span>action hash: {truncate(signal)}</span></div><p className="mt-3 text-xs text-muted">Selfie Check raises the cost of automated and repeated abuse.</p></div>}
       {error && <p className="mt-3 border border-danger bg-danger/10 px-3 py-2 text-xs text-danger">{error}</p>}
     </div>
   );

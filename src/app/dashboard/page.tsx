@@ -23,7 +23,7 @@ function riskTone(score: number) {
 function LiveBadge({ queriedAt, subgraphId }: { queriedAt: number; subgraphId: string }) {
   const [elapsed, setElapsed] = useState(() => Math.max(0, Date.now() - queriedAt));
   useEffect(() => { const timer = window.setInterval(() => setElapsed(Math.max(0, Date.now() - queriedAt)), 1000); return () => window.clearInterval(timer); }, [queriedAt]);
-  return <div className="flex flex-wrap items-center gap-2 border border-ok/50 bg-ok/10 px-3 py-2 font-mono text-[11px] text-ok"><span className="h-2 w-2 animate-pulse rounded-full bg-ok" aria-hidden="true" /><span>LIVE</span><span className="text-foreground">{Math.floor(elapsed / 1000)}s ago</span><span className="text-muted">{subgraphId}</span></div>;
+  return <div className="flex flex-wrap items-center gap-2 rounded-full border border-ok/40 bg-ok/10 px-3 py-2 text-xs text-ok"><span className="h-2 w-2 animate-pulse rounded-full bg-ok" aria-hidden="true" /><span>Live</span><span className="text-foreground">{Math.floor(elapsed / 1000)}s ago</span><span className="text-muted">{subgraphId}</span></div>;
 }
 
 function EvidencePanel({ assessment, action, receipt, currentTime, onAttempt, onExecute }: { assessment: RiskAssessment | null; action: AgentAction | null; receipt: HumanGateReceipt | null; currentTime: number; onAttempt: () => Promise<void>; onExecute: () => Promise<void> }) {
