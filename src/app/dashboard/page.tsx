@@ -1,0 +1,140 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import HumanGate from "@/components/HumanGate";
+import { getWalletAssessment } from "@/components/_api";
+import { approvedReceipt, highRiskAssessment, messages, pendingAction, rejectedReceipt } from "@/components/_mocks";
+import type { HumanGateReceipt, RiskAssessment } from "@/lib/types";
+
+const formatUsd = (amount: number) => `$${amount.toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
+const shorten = (value: string) => `${value.slice(0, 12)}...${value.slice(-6)}`;
+
+function riskTone(score: number) {
+  if (score >= 70) return { text: "text-danger", stroke: "var(--danger)", label: "HIGH" };
+  if (score >= 50) return { text: "text-warn", stroke: "var(--warn)", label: "ELEVATED" };
+  return { text: "text-ok", stroke: "var(--ok)", label: "LOW" };
+}
+
+function LiveBadge({ queriedAt }: { queriedAt: number }) {
+  const [elapsed, setElapsed] = useState(() => Math.max(0, Date.now() - queriedAt));
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setElapsed(Math.max(0, Date.now() - queriedAt)), 1000);
+    return () => window.clearInterval(timer);
+  }, [queriedAt]);
+
+  return (
+    <div className="flex flex-wrap items-center gap-2 border border-ok/50 bg-ok/10 px-3 py-2 font-mono text-[11px] text-ok">
+      <span className="h-2 w-2 animate-pulse rounded-full bg-ok" aria-hidden="true" />
+      <span>LIVE</span>
+      <span className="text-foreground">{Math.floor(elapsed / 1000)}s ago</span>
+      <span className="text-muted">via subgraph</span>
+    </div>
+  );
+}
+
+function RiskGauge({ score }: { score: number }) {
+  const tone = riskTone(score);
+  const circumference = 2 * Math.PI * 45;
+  const dash = circumference * (Math.min(score, 100) / 100);
+  return (
+    <div className="relative grid h-44 w-44 place-items-center">
+      <svg viewBox="0 0 110 110" className="h-full w-full -rotate-90" role="img" aria-label={`Risk score ${score} out of 100`}>
+        <circle cx="55" cy="55" r="45" fill="none" stroke="var(--border)" strokeWidth="8" />
+        <circle cx="55" cy="55" r="45" fill="none" stroke={tone.stroke} strokeWidth="8" strokeLinecap="square" strokeDasharray={`${dash} ${circumference - dash}`} />
+      </svg>
+      <div className="absolute text-center">
+        <div className={`font-mono text-4xl font-semibold ${tone.text}`}>{score}</div>
+        <div className="font-mono text-[10px] tracking-[0.18em] text-muted">{tone.label} RISK</div>
+      </div>
+    </div>
+  );
+}
+
+function StatTile({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="border border-border bg-panel-raised p-3">
+      <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted">{label}</p>
+      <p className="mt-2 truncate font-mono text-sm text-foreground">{value}</p>
+    </div>
+  );
+}
+
+function ReceiptEntry({ receipt, status }: { receipt: HumanGateReceipt; status: "approved" | "rejected" }) {
+  const returning = receipt.continuity?.isReturning;
+  return (
+    <article className={`border-l-2 bg-panel-raised p-3 ${status === "rejected" ? "border-danger" : "border-ok"}`}>
+      <div className="flex items-center justify-between gap-3">
+        <span className={`font-mono text-xs font-semibold uppercase ${status === "rejected" ? "text-danger" : "text-ok"}`}>{status}</span>
+        <time className="font-mono text-[10px] text-muted">{new Date(receipt.verifiedAt).toLocaleTimeString()}</time>
+      </div>
+      <p className="mt-3 font-mono text-xs text-foreground">{shorten(receipt.nullifierHash)}</p>
+      <div className="mt-2 flex items-center justify-between text-xs text-muted">
+        <span>{returning ? `returning human · first approved ${receipt.continuity?.daysKnown} days ago` : "new human"}</span>
+        <span>{formatUsd(pendingAction.costUsd)}</span>
+      </div>
+    </article>
+  );
+}
+
+export default function Dashboard() {
+  const [assessment, setAssessment] = useState<RiskAssessment>(highRiskAssessment);
+  const [isMock, setIsMock] = useState(true);
+  const [receipt, setReceipt] = useState<HumanGateReceipt | undefined>();
+  const [currentTime, setCurrentTime] = useState<number | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    void getWalletAssessment(pendingAction.payload.wallet as string).then((result) => {
+      if (!active) return;
+      setAssessment(result.data);
+      setIsMock(result.mocked);
+    });
+    const clock = window.setInterval(() => setCurrentTime(Date.now()), 1000);
+    const approve = () => {
+      setCurrentTime(Date.now());
+      setReceipt(approvedReceipt);
+    };
+    window.addEventListener("human-gate:approved", approve);
+    return () => {
+      active = false;
+      window.clearInterval(clock);
+      window.removeEventListener("human-gate:approved", approve);
+    };
+  }, []);
+
+  const tone = riskTone(assessment.score);
+  const canExecute = Boolean(receipt && currentTime !== null && receipt.expiresAt > currentTime);
+
+  return (
+    <main className="min-h-screen bg-background text-foreground">
+      {isMock && <div className="sticky top-0 z-10 border-b border-warn bg-warn px-4 py-2 text-center font-mono text-xs font-bold tracking-[0.14em] text-background">MOCK DATA · FALLBACK FIXTURE ACTIVE</div>}
+      <header className="border-b border-border px-5 py-5 sm:px-8">
+        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-4">
+          <div><p className="font-mono text-xs uppercase tracking-[0.2em] text-brand">Human-Gated AI Copilot</p><h1 className="mt-1 text-xl font-semibold">Operator Console <span className="font-mono text-xs font-normal text-muted">/ session 7F2A</span></h1></div>
+          <div className="flex items-center gap-3 font-mono text-xs text-muted"><span className="h-2 w-2 rounded-full bg-ok" /> agent online <span className="text-border">|</span> chain: mainnet</div>
+        </div>
+      </header>
+
+      <div className="mx-auto grid max-w-[1600px] gap-px bg-border p-px lg:grid-cols-[minmax(230px,0.8fr)_minmax(380px,1.5fr)_minmax(250px,0.9fr)]">
+        <section className="min-h-[620px] bg-panel p-5" aria-labelledby="chat-heading">
+          <div className="flex items-center justify-between border-b border-border pb-4"><h2 id="chat-heading" className="font-mono text-xs uppercase tracking-[0.16em] text-muted">Chat thread</h2><span className="font-mono text-[10px] text-ok">READY</span></div>
+          <div className="space-y-4 pt-5">
+            {messages.map((message) => <div key={message.id} className={message.role === "user" ? "ml-5" : "mr-3"}><div className={`border p-3 text-sm leading-6 ${message.role === "user" ? "border-brand/40 bg-brand/10 text-foreground" : "border-border bg-panel-raised text-muted"}`}><p className="mb-2 font-mono text-[10px] uppercase tracking-[0.1em] text-brand">{message.role}</p>{message.content}</div></div>)}
+          </div>
+          <div className="mt-8 border-t border-border pt-4 font-mono text-[10px] leading-5 text-muted">Agent reads wallet evidence before proposing any paid or risky action.</div>
+        </section>
+
+        <section className="min-h-[620px] bg-panel p-5 sm:p-6" aria-labelledby="evidence-heading">
+          <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border pb-4"><div><h2 id="evidence-heading" className="font-mono text-xs uppercase tracking-[0.16em] text-muted">Evidence panel</h2><p className="mt-2 font-mono text-xs text-foreground">{assessment.evidence.address}</p></div><LiveBadge queriedAt={assessment.evidence.source.queriedAt} /></div>
+          <div className="mt-5 flex flex-wrap items-center gap-5"><RiskGauge score={assessment.score} /><div><p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted">Source subgraph</p><p className="mt-2 font-mono text-sm text-brand">{assessment.evidence.source.subgraphId}</p><p className={`mt-3 font-mono text-xs ${tone.text}`}>{tone.label} · decision confidence from Graph evidence</p></div></div>
+          <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4"><StatTile label="Transactions" value={String(assessment.evidence.txCount)} /><StatTile label="Counterparties" value={String(assessment.evidence.uniqueCounterparties)} /><StatTile label="First seen" value={assessment.evidence.firstSeen ? new Date(assessment.evidence.firstSeen).toLocaleDateString() : "Unknown"} /><StatTile label="Volume USD" value={formatUsd(assessment.evidence.totalVolumeUsd)} /></div>
+          <div className="mt-6"><h3 className="font-mono text-xs uppercase tracking-[0.14em] text-muted">Risk reasons / citations</h3><ul className="mt-3 space-y-2">{assessment.reasons.map((reason) => <li key={reason} className="border-l-2 border-warn bg-panel-raised px-3 py-2 text-sm text-foreground">{reason}</li>)}</ul></div>
+          <div className="mt-6 border border-warn/60 bg-warn/10 p-4"><div className="flex items-center justify-between gap-4"><div><p className="font-mono text-[10px] uppercase tracking-[0.14em] text-warn">Pending action</p><p className="mt-2 text-sm text-foreground">{pendingAction.summary}</p></div><span className="font-mono text-sm text-warn">{formatUsd(pendingAction.costUsd)}</span></div><div className="mt-4 grid gap-2 font-mono text-xs text-muted sm:grid-cols-2"><span>risk score: <b className={tone.text}>{pendingAction.riskScore}</b></span><span>action hash: {shorten(receipt?.actionHash ?? "0xpending-action-hash")}</span></div><div className="mt-4"><HumanGate action={pendingAction} /></div><button type="button" disabled={!canExecute} className="mt-2 w-full border border-border bg-panel-raised px-4 py-3 text-sm font-semibold text-muted disabled:cursor-not-allowed disabled:opacity-100">{canExecute ? "Execute through x402 Gateway" : "Blocked: awaiting human approval"}</button></div>
+        </section>
+
+        <section className="min-h-[620px] bg-panel p-5" aria-labelledby="trail-heading"><div className="flex items-center justify-between border-b border-border pb-4"><h2 id="trail-heading" className="font-mono text-xs uppercase tracking-[0.16em] text-muted">Receipt trail</h2><span className="font-mono text-[10px] text-muted">APPEND ONLY</span></div><div className="space-y-3 pt-5"><ReceiptEntry receipt={rejectedReceipt} status="rejected" />{receipt && <ReceiptEntry receipt={receipt} status="approved" />}</div><div className="mt-8 border-t border-border pt-4"><p className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted">Receipt policy</p><p className="mt-2 text-xs leading-5 text-muted">A receipt is single-action, short-lived, and cryptographically bound to the proposed payload.</p></div></section>
+      </div>
+    </main>
+  );
+}
