@@ -9,10 +9,10 @@
   --muted: #a1a1a6;
 
   /* Semantic — used by the risk gauge, LIVE badge and receipt trail. */
-  --ok: #68d391;
+  --ok: #8fd8b0;
   --warn: #f2c15f;
   --danger: #ff6961;
-  --brand: #2997ff;
+  --brand: #7ab8f5;
 }
 
 @theme inline {
@@ -34,6 +34,11 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), sans-serif;
+}
+
+.text-ok,
+.text-brand {
+  font-weight: 700;
 }
 
 button,
