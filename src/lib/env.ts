@@ -54,7 +54,6 @@ export const clientEnv = clientParsed.success
 const serverSchema = z.object({
   WLD_RP_ID: required("WLD_RP_ID"),
   WLD_RP_PRIVATE_KEY: required("WLD_RP_PRIVATE_KEY"),
-  WLD_API_KEY: required("WLD_API_KEY"),
   GRAPH_API_KEY: required("GRAPH_API_KEY"),
   BAZANTIC_API_KEY: required("BAZANTIC_API_KEY"),
   BAZANTIC_GATEWAY_URL: z.url("BAZANTIC_GATEWAY_URL must be a valid URL"),

@@ -41,11 +41,25 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ error: "World ID signal does not match pending action" }, { status: 400 });
   }
 
+  // Verify against OUR relying party, never a client-supplied one. Otherwise a
+  // proof issued for someone else's app (bound to our action hash, which is
+  // public) would verify as valid for *that* app and open our gate.
+  let ourRpId: string;
   try {
-    const environment = serverEnv();
-    const verification = await fetch(`https://developer.world.org/api/v4/verify/${encodeURIComponent(body.rp_id)}`, {
+    ourRpId = serverEnv().WLD_RP_ID;
+  } catch (error) {
+    return Response.json({ error: error instanceof Error ? error.message : "WLD_RP_ID is not configured" }, { status: 500 });
+  }
+  if (body.rp_id !== ourRpId) {
+    return Response.json({ error: "Proof was requested for a different relying party" }, { status: 400 });
+  }
+
+  try {
+    // No Authorization header: World's v4 verify endpoint is unauthenticated
+    // (its OpenAPI spec declares `security: []`), so no API key is needed.
+    const verification = await fetch(`https://developer.world.org/api/v4/verify/${encodeURIComponent(ourRpId)}`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${environment.WLD_API_KEY}` },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body.idkitResponse),
     });
     if (!verification.ok) {
