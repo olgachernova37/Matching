@@ -20,7 +20,10 @@ const required = (name: string) =>
 const clientSchema = z.object({
   NEXT_PUBLIC_WLD_APP_ID: required("NEXT_PUBLIC_WLD_APP_ID"),
   NEXT_PUBLIC_WLD_ACTION: required("NEXT_PUBLIC_WLD_ACTION"),
-  NEXT_PUBLIC_WLD_ENV: z.enum(["sandbox", "production"]).default("sandbox"),
+  // All three IDKit environments: "sandbox" = the Sandbox World App,
+  // "staging" = World's web simulator (docs: "To test during development, use
+  // the simulator and set environment to staging"), "production" = real users.
+  NEXT_PUBLIC_WLD_ENV: z.enum(["sandbox", "staging", "production"]).default("sandbox"),
 });
 
 const clientParsed = clientSchema.safeParse({
