@@ -137,6 +137,7 @@ export const en = {
     approved: "approved",
     executed: "executed",
     rejected: "rejected",
+    credential: { selfie_check: "Selfie Check", device: "Device", orb: "Orb" },
     newHuman: "new human",
     returningHuman: {
       one: "returning human · first approved {n} day ago",

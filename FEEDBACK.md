@@ -20,6 +20,10 @@ This cost us the most time of anything in the integration, and both cases were d
    no reply for hours, then asked in the ETHGlobal Discord — where the World team answered that **no
    access is needed**. With a 46-hour hackathon, we had already designed a fallback path around a
    gate that reportedly isn't there.
+   **Confirmed empirically:** on 2026-09-12 at 17:54 CEST we completed a full Selfie Check
+   end-to-end in **`environment: production`** with the **ordinary World App from the Play Store** —
+   no feature flag, no Sandbox build, no reply to our email. The credential works out of the box for
+   a production `app_id`. The Warning cost us a day of planning around a gate that does not exist.
    **Suggestion:** state the real status on credentials/11 and in the SDK note, or show the flag
    state per app in the Developer Portal so a developer can check it in five seconds.
 
@@ -41,6 +45,10 @@ This cost us the most time of anything in the integration, and both cases were d
   reading `idkit-core`'s type declarations and noticing it exports `hashSignal`. A backend that
   checks the signal (the whole point of binding a signal) will fail 100% of the time, and only once
   real credentials exist — the worst possible moment.
+  **It bit us twice.** After fixing the server we hit it again in the client: our widget handler
+  made the same comparison and rejected a **genuine, camera-completed Selfie Check** at the last
+  step, showing "signal mismatch" to a user who had just proven they were human. Two independent
+  developers reading the same field name made the same wrong assumption.
   **Suggestion:** one line by the response shape: *"compare against `hashSignal(yourSignal)`"*.
 - **The RP signature format is easy to get wrong and fails invisibly.** Our first implementation
   EIP-191-signed `JSON.stringify(rpContext)`. The real message is binary:
@@ -85,9 +93,12 @@ This cost us the most time of anything in the integration, and both cases were d
 
 ## Sandbox App: states, proof flows, test users, errors, edge cases
 
-- **Requested Android tester access 2026-09-11 ~23:00 CEST via Developer Portal → World ID Sandbox.**
-  Approval had not arrived at the time of writing, so the notes below are from the docs and the
-  SDK/API surface rather than a device. **We will not claim device results we do not have.**
+- **We shipped without Sandbox at all.** Requested Android tester access 2026-09-11 ~23:00 CEST
+  (Developer Portal → World ID Sandbox). **No approval had arrived ~19 hours later, by submission.**
+  Meanwhile the flow was verified in **production** with the ordinary World App, so the notes below
+  are from the docs and SDK surface rather than a Sandbox device. **We claim no Sandbox device
+  results, because we have none.** The practical lesson for a weekend hackathon: the documented
+  testing path was the one we could not use, and the undocumented one (production) worked first try.
 - **Documented limitations we planned around:** Sandbox builds aren't publicly listed (TestFlight /
   private Play link); the **Semi-cold** journey (reinstall → account recovery → Selfie Check) is
   reliable on Android but has gaps on iOS around invite-code redemption; invite-code handling differs
@@ -117,8 +128,9 @@ Ranked by how much time each cost us:
 
 1. **Access gating that contradicts itself** (both Selfie Check and Sandbox) — hours, plus a fallback
    design we may not have needed.
-2. **`signal_hash` vs `hashSignal(signal)`** — would have failed 100% of real verifications; found
-   only by reading type declarations.
+2. **`signal_hash` vs `hashSignal(signal)`** — failed 100% of real verifications, twice (server and
+   client). It rejected a completed Selfie Check in production; found only by reading type
+   declarations. This is the single highest-value doc fix on this list.
 3. **RP signature format** — no compile-time or runtime hint; silent rejection by the World App.
    `signRequest` exists but is undiscoverable from the integration guide.
 4. **RP signing key provenance** — not documented where it appears or how to rotate it.

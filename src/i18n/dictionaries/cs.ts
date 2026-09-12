@@ -130,6 +130,7 @@ export const cs: Dictionary = {
     approved: "schváleno",
     executed: "provedeno",
     rejected: "zamítnuto",
+    credential: { selfie_check: "Selfie Check", device: "Zařízení", orb: "Orb" },
     newHuman: "nový člověk",
     returningHuman: {
       one: "vracející se člověk · poprvé schválil před {n} dnem",

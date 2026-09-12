@@ -130,6 +130,7 @@ export const uk: Dictionary = {
     approved: "схвалено",
     executed: "виконано",
     rejected: "відхилено",
+    credential: { selfie_check: "Selfie Check", device: "Пристрій", orb: "Orb" },
     newHuman: "нова людина",
     returningHuman: {
       one: "людина повернулася · вперше схвалила {n} день тому",
