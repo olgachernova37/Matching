@@ -93,6 +93,16 @@ This cost us the most time of anything in the integration, and both cases were d
   reliable on Android but has gaps on iOS around invite-code redemption; invite-code handling differs
   per platform. Because of that we chose **Android** as the demo device — a decision driven entirely
   by that one documentation paragraph, which was genuinely useful.
+- **Is Sandbox even required for a production app id? Nothing says.** Our Developer Portal app id is
+  a **production** id (`app_...`, not `app_staging_...`), yet every page routed us to
+  `environment: sandbox` plus a gated Sandbox build. We are not alone: in the ETHGlobal Discord on
+  2026-09-12 another participant reported that the Sandbox build appears to be the same app as
+  production, that the World App UI had just been updated, and that the profile section now offers a
+  World ID download — asking *"what's the point of beta testing on the sandbox app when we can do it
+  in production"* and receiving no answer. Between the two of us that is a day of hackathon time
+  spent on an environment question.
+  **Suggestion:** state plainly which `environment` value matches which app id, and when Sandbox is
+  genuinely required versus optional. One sentence would have saved us both.
 - **The Hot / Cold / Semi-cold framing is good** and we structured our test plan around it.
 - **Gap:** the Sandbox pages don't say how to **create** a test user, only that accounts are
   resettable ("delete and recreate freely"). A first-time integrator doesn't know whether a test user
