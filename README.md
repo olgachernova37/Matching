@@ -112,7 +112,8 @@ An external agent can **prepare** an action. It can never **approve** one.
 | `src/lib/bazantic/` | x402 payment client, recipes, run log |
 | `src/lib/agent/` | tool loop (Gemini), plan/execute, shared store |
 | `src/app/api/` | 7 routes: agent, worldid, graph, gateway |
-| `src/app/dashboard/` | three-pane operator console |
+| `src/app/[lang]/dashboard/` | three-pane operator console |
+| `src/i18n/` | English / Czech / Ukrainian dictionaries, locale negotiation in `src/proxy.ts` |
 | [`SKILL.md`](SKILL.md) | The Graph skill, in the official skills format |
 | [`FEEDBACK.md`](FEEDBACK.md) | World ID integration feedback (required deliverable) |
 | [`openapi.yaml`](openapi.yaml) | spec Bazantic builds the gateway from |

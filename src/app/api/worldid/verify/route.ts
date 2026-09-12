@@ -34,11 +34,17 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ error: "IDKit response has no credential response" }, { status: 400 });
   }
   const responseItem = body.idkitResponse.responses[0];
-  // IDKit reports signal_hash as the field-element hash OF the signal, not the
-  // signal itself — our signal is the actionHash, so compare against
-  // hashSignal(actionHash). A raw comparison can never match a real proof.
-  if (!isRecord(responseItem) || responseItem.signal_hash !== hashSignal(expectedHash)) {
-    return Response.json({ error: "World ID signal does not match pending action" }, { status: 400 });
+  // The proof must be bound to THIS action's payload. IDKit normally reports
+  // signal_hash as the field-element hash OF the signal (hashSignal), but
+  // accept the raw signal too: either encoding proves the same thing, and the
+  // exact form has varied across SDK versions. The error names both values so
+  // a mismatch is diagnosable instead of mysterious.
+  const expectedSignalHash = hashSignal(expectedHash);
+  const receivedSignal = isRecord(responseItem) ? responseItem.signal_hash : undefined;
+  if (typeof receivedSignal !== "string" || (receivedSignal !== expectedSignalHash && receivedSignal !== expectedHash)) {
+    return Response.json({
+      error: `World ID signal does not match pending action (expected ${expectedSignalHash} or ${expectedHash}, got ${String(receivedSignal)})`,
+    }, { status: 400 });
   }
 
   // Verify against OUR relying party, never a client-supplied one. Otherwise a
