@@ -49,3 +49,20 @@ input {
 ::selection {
   background: color-mix(in srgb, var(--brand) 35%, transparent);
 }
+
+.text-gold {
+  background: linear-gradient(
+    100deg,
+    #b8832f 0%,
+    #f6dd8f 22%,
+    #fff6d2 42%,
+    #e8b94f 62%,
+    #f4d987 82%,
+    #c08c33 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 10px color-mix(in srgb, #e8b94f 30%, transparent));
+}

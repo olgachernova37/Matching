@@ -3,12 +3,12 @@ import Link from "next/link";
 
 export default function Home() {
   const steps = [
-    ["01", "Graph", "Read live wallet evidence"],
-    ["02", "Risk", "Score the proposed action"],
-    ["03", "Plan", "Hash the exact payload"],
-    ["04", "Selfie Check", "A human approves"],
-    ["05", "x402", "Gateway verifies receipt"],
-    ["06", "Audit", "Show the result"],
+    ["01", "Graph", "We look up the wallet and pull its real, live history on chain."],
+    ["02", "Risk", "That history becomes a score, so you can see how safe the action is."],
+    ["03", "Plan", "The agent writes down exactly what it wants to do, down to the last detail."],
+    ["04", "Selfie Check", "A real person takes a selfie to prove they are here and they agree."],
+    ["05", "x402", "Only then does the payment go out, and the gateway checks the receipt."],
+    ["06", "Audit", "Every step above is saved, so anyone can go back and see what happened."],
   ];
 
   return (
@@ -16,10 +16,9 @@ export default function Home() {
       <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-7xl flex-col gap-16">
         <header className="flex items-center justify-between border-b border-border pb-5">
           <Link href="/" className="text-sm font-semibold tracking-tight text-foreground">Human-Gated</Link>
-          <div className="flex items-center gap-6 text-xs text-muted">
-            <span className="hidden sm:inline">operator safety layer</span>
-            <span className="font-mono text-brand">01 / 06</span>
-          </div>
+          <p className="text-gold text-[13px] font-semibold tracking-[0.16em] uppercase sm:text-sm">
+            Created by Olga Demianyk
+          </p>
         </header>
         <section className="grid flex-1 items-center gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(360px,0.9fr)] lg:gap-20">
           <div className="max-w-3xl">
@@ -58,7 +57,7 @@ export default function Home() {
                   {index < steps.length - 1 && <span className="hidden h-px flex-1 bg-border lg:hidden" />}
                 </div>
                 <h2 className="text-sm font-semibold text-foreground">{title}</h2>
-                <p className="mt-2 text-sm leading-5 text-muted">{detail}</p>
+                <p className="mt-2 text-sm leading-6 text-muted">{detail}</p>
               </div>
             ))}
           </div>
