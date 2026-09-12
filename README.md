@@ -122,7 +122,7 @@ An external agent can **prepare** an action. It can never **approve** one.
 
 - **The Graph** — Best AI Tooling / AI Use Case (From Scratch): see [`SKILL.md`](SKILL.md)
 - **World** — Selfie Check: see [`FEEDBACK.md`](FEEDBACK.md)
-- **Bazantic** — Best Recipe using ETHGlobal Sponsor APIs: gateway **EchoBrief**, recipe **Human-gated wallet check**; Bazantic username: _(added at submission)_
+- **Bazantic** — Best Recipe using ETHGlobal Sponsor APIs: gateway **EchoBrief**, recipe **`eth-transfer-risk-check-with-human-approval`**; Bazantic username (GitHub): **olgachernova37**
 
 Built from scratch during ETHOnline 2026. Stack: Next.js 16, TypeScript, Tailwind 4, viem, Upstash
 Redis, Gemini.
