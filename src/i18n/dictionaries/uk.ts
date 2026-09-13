@@ -14,45 +14,35 @@ export const uk: Dictionary = {
   },
 
   landing: {
-    brand: "Human-Gated",
+    brand: "Human",
+    brandSuffix: "-Gated",
+    homeAria: "Human-Gated — на головну",
     credit: "Created by Olga Demianyk",
-    eyebrow: "Пауза перед наслідком",
-    headlineTop: "Інтелект,",
-    headlineBottom: "з людиною в кожному рішенні.",
-    lead: "Кожна пропозиція спирається на живі докази. Коли AI-агент готовий діяти, останнє слово залишається за підтвердженою людиною.",
-    openConsole: "Відкрити консоль",
-    builtFor: "Створено для дій із наслідками",
-    markLabel: "Безперервність / довіра",
-    markAlt: "Золотий знак нескінченності — символ безперервного людського нагляду",
-    markNoteTop: "Жодної дії",
-    markNoteBottom: "без доказу",
-    flowLabel: "Шестикроковий шлях дії",
-    steps: {
-      graph: {
-        title: "Graph",
-        detail: "Ми знаходимо гаманець і підтягуємо його справжню, живу історію в мережі.",
-      },
-      risk: {
-        title: "Ризик",
-        detail: "Ця історія перетворюється на оцінку, щоб ви бачили, наскільки дія безпечна.",
-      },
-      plan: {
-        title: "План",
-        detail: "Агент точно записує, що саме хоче зробити, до останньої деталі.",
-      },
-      selfie: {
-        title: "Selfie Check",
-        detail: "Жива людина робить селфі, щоб довести, що вона тут і що вона згодна.",
-      },
-      x402: {
-        title: "x402",
-        detail: "Лише тоді платіж вирушає, а шлюз перевіряє квитанцію.",
-      },
-      audit: {
-        title: "Аудит",
-        detail: "Кожен крок вище зберігається, тож будь-хто може повернутися й побачити, що сталося.",
-      },
+    navLabel: "Основна навігація",
+    nav: {
+      howItWorks: "Як це працює",
+      sponsors: "Партнери",
+      security: "Безпека",
+      gatewayApi: "Gateway API",
     },
+    openConsole: "Відкрити консоль",
+    viewSource: "Переглянути на GitHub",
+    badge: "Selfie Check · The Graph · x402",
+    headline: {
+      before: "Ваш",
+      em: "AI-агент",
+      after: "нічого не витратить,",
+      bottom: "доки людина не схвалить.",
+    },
+    lead: "Живі on-chain дані визначають ризик. Кожна ризикована дія чекає на World ID Selfie Check, прив'язаний саме до неї.",
+    statsLabel: "Ключові факти",
+    stats: {
+      binding: "1 доказ — 1 конкретна дія",
+      receipt: "Одноразові квитанції на 5 хвилин",
+      sponsors: "Працює на The Graph, World і Bazantic",
+    },
+    menuOpen: "Відкрити меню",
+    menuClose: "Закрити меню",
   },
 
   dashboard: {

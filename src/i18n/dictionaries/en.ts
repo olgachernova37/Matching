@@ -21,45 +21,35 @@ export const en = {
   },
 
   landing: {
-    brand: "Human-Gated",
+    brand: "Human",
+    brandSuffix: "-Gated",
+    homeAria: "Human-Gated home",
     credit: "Created by Olga Demianyk",
-    eyebrow: "A pause before consequence",
-    headlineTop: "Intelligence,",
-    headlineBottom: "with a human in the loop.",
-    lead: "Live evidence informs every proposal. A verified person remains the final authority when an AI agent is ready to act.",
-    openConsole: "Open Console",
-    builtFor: "Built for consequential actions",
-    markLabel: "Continuity / trust",
-    markAlt: "Gold infinity mark representing continuous human oversight",
-    markNoteTop: "No action",
-    markNoteBottom: "without proof",
-    flowLabel: "Six-step action flow",
-    steps: {
-      graph: {
-        title: "Graph",
-        detail: "We look up the wallet and pull its real, live history on chain.",
-      },
-      risk: {
-        title: "Risk",
-        detail: "That history becomes a score, so you can see how safe the action is.",
-      },
-      plan: {
-        title: "Plan",
-        detail: "The agent writes down exactly what it wants to do, down to the last detail.",
-      },
-      selfie: {
-        title: "Selfie Check",
-        detail: "A real person takes a selfie to prove they are here and they agree.",
-      },
-      x402: {
-        title: "x402",
-        detail: "Only then does the payment go out, and the gateway checks the receipt.",
-      },
-      audit: {
-        title: "Audit",
-        detail: "Every step above is saved, so anyone can go back and see what happened.",
-      },
+    navLabel: "Primary",
+    nav: {
+      howItWorks: "How It Works",
+      sponsors: "Sponsors",
+      security: "Security",
+      gatewayApi: "Gateway API",
     },
+    openConsole: "Open Console",
+    viewSource: "View on GitHub",
+    badge: "Selfie Check · The Graph · x402",
+    headline: {
+      before: "Your",
+      em: "AI agent",
+      after: "can't spend",
+      bottom: "until a human approves.",
+    },
+    lead: "Live on-chain evidence scores the risk. Every risky action waits for a World ID Selfie Check bound to that exact payload.",
+    statsLabel: "Key facts",
+    stats: {
+      binding: "1 proof per exact action",
+      receipt: "Single-use, 5-minute receipts",
+      sponsors: "Built on The Graph, World & Bazantic",
+    },
+    menuOpen: "Open menu",
+    menuClose: "Close menu",
   },
 
   dashboard: {

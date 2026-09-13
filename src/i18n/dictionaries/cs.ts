@@ -14,45 +14,35 @@ export const cs: Dictionary = {
   },
 
   landing: {
-    brand: "Human-Gated",
+    brand: "Human",
+    brandSuffix: "-Gated",
+    homeAria: "Human-Gated – domů",
     credit: "Created by Olga Demianyk",
-    eyebrow: "Pauza před následkem",
-    headlineTop: "Inteligence,",
-    headlineBottom: "s člověkem v každém rozhodnutí.",
-    lead: "Každý návrh vychází ze živých důkazů. Když je AI agent připraven jednat, poslední slovo má ověřený člověk.",
-    openConsole: "Otevřít konzoli",
-    builtFor: "Vytvořeno pro akce s následky",
-    markLabel: "Kontinuita / důvěra",
-    markAlt: "Zlatý symbol nekonečna představující nepřetržitý lidský dohled",
-    markNoteTop: "Žádná akce",
-    markNoteBottom: "bez důkazu",
-    flowLabel: "Šestikrokový průběh akce",
-    steps: {
-      graph: {
-        title: "Graph",
-        detail: "Vyhledáme peněženku a načteme její skutečnou, živou historii na blockchainu.",
-      },
-      risk: {
-        title: "Riziko",
-        detail: "Z této historie vznikne skóre, takže vidíte, jak bezpečná daná akce je.",
-      },
-      plan: {
-        title: "Plán",
-        detail: "Agent přesně sepíše, co chce udělat, do posledního detailu.",
-      },
-      selfie: {
-        title: "Selfie Check",
-        detail: "Skutečný člověk pořídí selfie a tím doloží, že tu je a že souhlasí.",
-      },
-      x402: {
-        title: "x402",
-        detail: "Teprve pak platba odejde a brána zkontroluje potvrzení.",
-      },
-      audit: {
-        title: "Audit",
-        detail: "Každý krok výše se ukládá, takže se kdokoli může vrátit a zjistit, co se stalo.",
-      },
+    navLabel: "Hlavní navigace",
+    nav: {
+      howItWorks: "Jak to funguje",
+      sponsors: "Partneři",
+      security: "Bezpečnost",
+      gatewayApi: "Gateway API",
     },
+    openConsole: "Otevřít konzoli",
+    viewSource: "Zobrazit na GitHubu",
+    badge: "Selfie Check · The Graph · x402",
+    headline: {
+      before: "Váš",
+      em: "AI agent",
+      after: "nic neutratí,",
+      bottom: "dokud to neschválí člověk.",
+    },
+    lead: "Živá on-chain data určí riziko. Každá riziková akce čeká na World ID Selfie Check navázaný přesně na ni.",
+    statsLabel: "Klíčová fakta",
+    stats: {
+      binding: "1 důkaz na 1 konkrétní akci",
+      receipt: "Jednorázová potvrzení na 5 minut",
+      sponsors: "Postaveno na The Graph, World a Bazantic",
+    },
+    menuOpen: "Otevřít menu",
+    menuClose: "Zavřít menu",
   },
 
   dashboard: {
