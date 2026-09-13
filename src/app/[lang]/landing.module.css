@@ -389,6 +389,36 @@
   display: flex;
 }
 
+/* Gold infinity, always visible, pinned inside the bottom-right gutter.
+   48px wide fits within the stats row's side padding (72px and up), so it
+   never sits on top of the last stat. */
+.cornerMark {
+  position: fixed;
+  right: 16px;
+  bottom: max(14px, env(safe-area-inset-bottom));
+  z-index: 3;
+  width: 48px;
+  pointer-events: none;
+  animation: in-mark 1.4s cubic-bezier(0.16, 1, 0.3, 1) 1.6s both;
+}
+
+.cornerMarkImg {
+  display: block;
+  width: 100%;
+  height: auto;
+  animation: mark-glow 4.5s ease-in-out 3s infinite;
+}
+
+@keyframes mark-glow {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 3px rgba(232, 185, 79, 0.25));
+  }
+  50% {
+    filter: drop-shadow(0 0 12px rgba(232, 185, 79, 0.65));
+  }
+}
+
 .heroMarkImg {
   width: min(480px, 62%);
   height: auto;
@@ -933,6 +963,13 @@
 /* ---------- Desktop lock: one frame, no scroll ---------- */
 
 @media (min-width: 901px) {
+  /* Keep the rightmost fact clear of the corner infinity mark:
+     16px inset + 48px mark + 12px gap. Between 901px and 1279px --stats-x
+     drops to 36px, which put the mark on top of the last fact. */
+  .stats {
+    padding-right: max(var(--stats-x), 76px);
+  }
+
   :global(html):has(.root),
   :global(body):has(.root) {
     height: 100%;
@@ -1077,6 +1114,8 @@
     align-items: center;
     gap: 16px;
     text-align: center;
+    /* Stacked and centred, the last stat would meet the corner mark: leave room under it. */
+    padding-bottom: calc(max(var(--stats-y), env(safe-area-inset-bottom)) + 44px);
   }
 
   .stat {

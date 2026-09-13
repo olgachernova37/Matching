@@ -11,8 +11,12 @@ const inter = Inter({ subsets: ["latin", "latin-ext", "cyrillic"], variable: "--
 // Instrument Serif has no Cyrillic; Ukrainian falls back per glyph to Georgia/Times.
 const serif = Instrument_Serif({ weight: "400", style: "italic", subsets: ["latin", "latin-ext"], variable: "--font-landing-serif", display: "swap" });
 
+// Self-hosted H.264 transcode of the original hero clip. The original was HEVC
+// 10-bit with its moov atom at the end: it would not play in Firefox or in
+// Chromium builds without HEVC, and mobile had to fetch the file's tail before
+// starting. This copy is 3.5 MB (was 9.0 MB), faststart, same 1080p/24fps.
 const HERO_VIDEO =
-  "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260818_072341_50851634-bbc3-4c33-9acc-7647d4db44aa.mp4";
+  "/hero.mp4";
 const SOURCE_URL = "https://github.com/olgachernova37/Matching";
 
 /** Entrance delay, read by the `.appear*` classes as `var(--d)`. */
@@ -115,6 +119,11 @@ export default async function Home() {
             </p>
           </div>
         </main>
+
+        {/* Gold infinity mark, always visible in the bottom-right corner. */}
+        <div className={styles.cornerMark} aria-hidden="true">
+          <Image src="/infinity-mark.svg" alt="" width={720} height={420} className={styles.cornerMarkImg} />
+        </div>
 
         <footer className={styles.stats} aria-label={copy.statsLabel}>
           <div className={`${styles.stat} ${styles.appear} ${styles.appearStat}`} data-appear style={delay("1.12s")}>
