@@ -7,10 +7,10 @@ import { useEffect } from "react";
  * the hero video) gets `data-in` once its own animation ends, which drops the
  * animation and pins the final state. If no animation is running at all
  * (unsupported, disabled, reduced motion), everything is marked in at once.
- * With reduced motion requested, the background video is also paused.
- * If the video cannot play at all (the file is HEVC, which some browsers
- * cannot decode), the root gets `data-video-failed` and the gold infinity
- * mark is shown in its place.
+ * With reduced motion requested, the background video keeps playing at half
+ * speed instead of freezing on its first frame. If the video cannot play at
+ * all, the root gets `data-video-failed` and the large gold infinity mark is
+ * shown in its place.
  */
 export default function LandingMotion() {
   useEffect(() => {
@@ -47,9 +47,13 @@ export default function LandingMotion() {
     video?.addEventListener("error", onVideoError);
     if (video?.error) onVideoError();
 
-    if (video && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      video.pause();
-      video.currentTime = 0;
+    if (video) {
+      // Reduced motion: keep the slow ambient wave, just calmer, rather than
+      // freezing it - a frozen first frame reads as "the animation is broken".
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) video.playbackRate = 0.5;
+      // Some mobile browsers (battery or data saver) skip the autoPlay attribute
+      // but still allow a script-initiated play() for a muted, inline video.
+      void video.play().catch(() => {});
     }
 
     return () => {
