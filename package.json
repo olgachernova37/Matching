@@ -9,7 +9,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "node --test \"src/**/*.test.ts\"",
-    "graph:smoke": "node scripts/graph-smoke.ts"
+    "graph:smoke": "node scripts/graph-smoke.ts",
+    "market:demo": "node scripts/market-demo.ts"
   },
   "dependencies": {
     "@google/genai": "^2.22.0",
