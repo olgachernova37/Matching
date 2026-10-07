@@ -8,8 +8,9 @@ import { listProviders } from "./catalog.ts";
 import { discover } from "./discovery.ts";
 import { applyEvent, describeFunds, isTerminal } from "./escrow.ts";
 import { judge, settle, type JudgeOptions } from "./judge.ts";
-import { AUTO_APPROVE_LIMIT_USD, fundingRequiresHuman } from "./policy.ts";
-import type { Deal, DealEvent, DiscoveryQuery, DiscoveryResult, Provider, Verdict } from "./types.ts";
+import { fundingGate } from "./policy.ts";
+import { checkProviderWallet } from "./provider-risk.ts";
+import type { Deal, DealEvent, DiscoveryQuery, DiscoveryResult, Provider, ProviderRiskCheck, Verdict } from "./types.ts";
 
 /**
  * Deal orchestration: discovery → (Selfie Check if large) → escrow → delivery
@@ -83,8 +84,9 @@ function approvalAction(deal: Deal, purpose: "fund" | "dispute", summary: string
     kind: "paid_call",
     summary,
     payload,
-    // Not a Graph wallet score: marketplace gates are amount- and judge-driven.
-    riskScore: 0,
+    // The provider wallet's live Graph score (0 when the Graph was unreadable;
+    // that case is already a stated reason for the gate).
+    riskScore: deal.providerRisk.score ?? 0,
     riskReasons: reasons,
     costUsd: deal.amountUsd,
     requiresHuman: true,
@@ -143,8 +145,19 @@ export interface CreateDealResult {
   approvalActionId?: string;
 }
 
-/** Step 1-2: discover a provider, then fund escrow (or wait for a human). */
-export async function createDeal(input: CreateDealInput, providers: readonly Provider[] = listProviders()): Promise<CreateDealResult> {
+export interface CreateDealOptions {
+  providers?: readonly Provider[];
+  /** Reads the provider's wallet; defaults to live The Graph data. */
+  checkProvider?: ProviderRiskCheck;
+}
+
+/**
+ * Step 1-2: discover a provider, check its wallet on The Graph, then fund
+ * escrow — or wait for a human when the amount or the wallet calls for one.
+ */
+export async function createDeal(input: CreateDealInput, options: CreateDealOptions = {}): Promise<CreateDealResult> {
+  const providers = options.providers ?? listProviders();
+  const checkProvider = options.checkProvider ?? checkProviderWallet;
   const buyer = input.buyer.trim();
   const task = input.task.trim();
   if (!buyer) throw new MarketError("INVALID_REQUEST", "buyer is required", 400);
@@ -157,7 +170,9 @@ export async function createDeal(input: CreateDealInput, providers: readonly Pro
     throw new MarketError("NO_PROVIDER", error instanceof Error ? error.message : "No provider found", 404);
   }
   const { provider } = discovery;
-  const needsHuman = fundingRequiresHuman(provider.priceUsd);
+  const providerRisk = await checkProvider(provider.payTo);
+  const fundingReasons = fundingGate(provider.priceUsd, providerRisk);
+  const needsHuman = fundingReasons.length > 0;
   const now = Date.now();
   let deal: Deal = {
     id: randomUUID(),
@@ -170,12 +185,14 @@ export async function createDeal(input: CreateDealInput, providers: readonly Pro
     status: "awaiting_approval",
     settlement: "simulated",
     fundingRequiresHuman: needsHuman,
+    fundingReasons,
+    providerRisk,
     createdAt: now,
     history: [{ at: now, event: "create", status: "awaiting_approval", note: discovery.reason }],
   };
 
   if (!needsHuman) {
-    deal = await saveDeal(applyEvent(deal, "approve", `$${deal.amountUsd} is within the $${AUTO_APPROVE_LIMIT_USD} limit — agents approved it without a human; funds locked in escrow`, now));
+    deal = await saveDeal(applyEvent(deal, "approve", `$${deal.amountUsd} is within the limit and the provider's wallet passed the Graph check — agents approved it without a human; funds locked in escrow`, now));
     return { deal, discovery };
   }
 
@@ -183,7 +200,7 @@ export async function createDeal(input: CreateDealInput, providers: readonly Pro
     deal,
     "fund",
     `Lock $${deal.amountUsd} in escrow for ${provider.name}: ${task}`,
-    [`$${deal.amountUsd} is above the $${AUTO_APPROVE_LIMIT_USD} limit agents may spend alone`],
+    fundingReasons,
   );
   await savePendingAction(action);
   deal = await saveDeal({ ...deal, fundingActionId: action.id });

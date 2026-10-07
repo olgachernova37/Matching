@@ -1,5 +1,6 @@
 export * from "./types.ts";
-export { AUTO_APPROVE_LIMIT_USD, JUDGE_MIN_CONFIDENCE, fundingRequiresHuman } from "./policy.ts";
+export { AUTO_APPROVE_LIMIT_USD, JUDGE_MIN_CONFIDENCE, fundingGate, fundingRequiresHuman } from "./policy.ts";
+export { checkProviderWallet } from "./provider-risk.ts";
 export { SEED_PROVIDERS, getProvider, listProviders, listSkills } from "./catalog.ts";
 export { discover } from "./discovery.ts";
 export { applyEvent, describeFunds, isTerminal, nextStatus } from "./escrow.ts";

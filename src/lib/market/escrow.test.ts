@@ -14,6 +14,8 @@ const base: Deal = {
   status: "awaiting_approval",
   settlement: "simulated",
   fundingRequiresHuman: false,
+  fundingReasons: [],
+  providerRisk: { address: "0x1111111111111111111111111111111111111111", available: true, score: 0, reasons: [] },
   createdAt: 0,
   history: [],
 };

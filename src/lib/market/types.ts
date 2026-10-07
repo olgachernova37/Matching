@@ -48,6 +48,28 @@ export interface DiscoveryResult {
   reason: string;
 }
 
+// ----------------------------------------------------------- provider risk
+
+/**
+ * Live evidence about the provider's payout wallet, read from The Graph
+ * before any money is locked. `available: false` means the Graph could not be
+ * read — which pulls in a human rather than letting the deal through.
+ */
+export interface ProviderRisk {
+  address: string;
+  available: boolean;
+  /** 0-100 from the existing risk engine; null when unavailable. */
+  score: number | null;
+  reasons: string[];
+  txCount?: number;
+  firstSeen?: number | null;
+  totalVolumeUsd?: number;
+  /** Provenance, shown as the LIVE badge. */
+  source?: { subgraphId: string; queriedAt: number };
+}
+
+export type ProviderRiskCheck = (address: string) => Promise<ProviderRisk>;
+
 // ------------------------------------------------------------------ escrow
 
 /**
@@ -93,8 +115,12 @@ export interface Deal {
   status: DealStatus;
   /** Escrow is a ledger record, not on-chain funds. */
   settlement: "simulated";
-  /** True when the amount was above the auto-approve limit at creation. */
+  /** True when the amount or the provider's wallet risk called for a human. */
   fundingRequiresHuman: boolean;
+  /** Why funding needs a human (empty when agents approved it alone). */
+  fundingReasons: string[];
+  /** Live Graph evidence about the provider's payout wallet. */
+  providerRisk: ProviderRisk;
   /** AgentAction id for the Selfie Check that approves funding, when required. */
   fundingActionId?: string;
   /** AgentAction id for the Selfie Check that settles a dispute, when escalated. */

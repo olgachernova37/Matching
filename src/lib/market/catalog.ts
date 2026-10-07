@@ -46,13 +46,37 @@ export const SEED_PROVIDERS: readonly Provider[] = Object.freeze([
   },
 ]);
 
+/**
+ * Optional payout-address overrides, so a demo can point providers at wallets
+ * the team controls (and that have real on-chain history for The Graph to
+ * read): MARKET_PROVIDER_ADDRESSES='{"lingo-fast":"0x…"}'. Invalid entries are
+ * ignored with a warning; the placeholders stay in place.
+ */
+function addressOverrides(): Record<string, string> {
+  const raw = process.env.MARKET_PROVIDER_ADDRESSES?.trim();
+  if (!raw) return {};
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) throw new Error("not an object");
+    const valid: Record<string, string> = {};
+    for (const [id, address] of Object.entries(parsed)) {
+      if (typeof address === "string" && /^0x[a-fA-F0-9]{40}$/.test(address)) valid[id] = address;
+      else console.warn(`[market] ignoring invalid address for provider "${id}"`);
+    }
+    return valid;
+  } catch {
+    console.warn("[market] MARKET_PROVIDER_ADDRESSES is not valid JSON; using placeholder addresses");
+    return {};
+  }
+}
+
 export function listProviders(): Provider[] {
-  return SEED_PROVIDERS.map((provider) => ({ ...provider, skills: [...provider.skills] }));
+  const overrides = addressOverrides();
+  return SEED_PROVIDERS.map((provider) => ({ ...provider, skills: [...provider.skills], payTo: overrides[provider.id] ?? provider.payTo }));
 }
 
 export function getProvider(id: string): Provider | undefined {
-  const found = SEED_PROVIDERS.find((provider) => provider.id === id);
-  return found ? { ...found, skills: [...found.skills] } : undefined;
+  return listProviders().find((provider) => provider.id === id);
 }
 
 export function listSkills(): string[] {
