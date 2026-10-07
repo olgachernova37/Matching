@@ -13,7 +13,8 @@
  *           Selfie Check, and so does the payout. The script prints the
  *           approval link and waits while you approve on your phone.
  *
- * Provider agents are simulated: their deliveries below are fixed text.
+ * Provider agents do the job through OpenAI when OPENAI_API_KEY is set; without
+ * it the fixed sample below is delivered and recorded as entered manually.
  * Settlement is simulated: escrow is a ledger record, not on-chain funds.
  */
 
@@ -23,7 +24,7 @@ const WAIT_LIMIT_MS = 10 * 60 * 1000;
 
 export {};
 
-interface DealView { id: string; status: string; funds: string; amountUsd: number; settlement: string; proposedOutcome?: string }
+interface DealView { id: string; status: string; funds: string; amountUsd: number; settlement: string; proposedOutcome?: string; output?: string }
 interface ApiReply {
   error?: { code: string; message: string };
   deal: DealView;
@@ -79,8 +80,16 @@ async function story(title: string, order: { skill: string; task: string }, deli
   }
   show(deal);
 
-  step(3, "Provider agent delivers");
-  deal = (await must("/api/market/deals/deliver", { dealId, output: delivery })).deal;
+  step(3, "Provider agent does the job");
+  const worked = await call("/api/market/deals/work", { dealId });
+  if (worked.status < 400) {
+    deal = worked.data.deal;
+    console.log(`     done by the provider's agent: ${deal.output?.slice(0, 120)}`);
+  } else {
+    // No model configured: deliver the fixed sample, recorded as entered manually.
+    console.log(`     provider agent unavailable (${worked.data.error?.message}); delivering the sample text manually`);
+    deal = (await must("/api/market/deals/deliver", { dealId, output: delivery })).deal;
+  }
   show(deal);
 
   step(4, "Judge compares order and delivery");

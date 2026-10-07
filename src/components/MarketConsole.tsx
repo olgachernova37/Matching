@@ -20,6 +20,8 @@ type DealView = Deal & { funds: string; done: boolean };
 type ApiError = { error?: { code?: string; message?: string } };
 type CatalogReply = { providers: Provider[]; skills: string[]; autoApproveLimitUsd: number };
 type CreateReply = { deal: DealView; discovery: { chosen: Provider; candidates: Provider[]; reason: string }; requiresHuman: boolean; approvalActionId?: string };
+type Order = { skill: string; task: string; maxPriceUsd?: number; strategy?: DiscoveryStrategy; parsedBy: "openai" | "keywords" };
+type AskReply = CreateReply & { order: Order };
 type DealReply = { deal: DealView };
 type JudgeReply = { deal: DealView; verdict: Verdict; requiresHuman: boolean; approvalActionId?: string };
 
@@ -35,6 +37,12 @@ const SAMPLES: Record<string, { task: string; delivery: string }> = {
   summarize: { task: "Summarize in one line: \"The team shipped escrow, a judge and discovery overnight, and every payout now waits for proof of delivery.\"", delivery: "The team shipped an escrowed agent marketplace overnight where payouts follow verified delivery." },
   contract_audit: { task: "Check this withdraw() for reentrancy: it sends ETH first, then sets balance[msg.sender] = 0.", delivery: "Vulnerable: the external call runs before the balance is zeroed, so a malicious receiver can re-enter withdraw(). Fix: zero the balance first (checks-effects-interactions) or add a reentrancy guard." },
 };
+
+/** The two demo stories, asked in plain words so the buyer agent has to understand them. */
+const DEMO_REQUESTS = [
+  "Translate into Czech, cheapest provider please: \"Good morning, the meeting is at 10.\"",
+  "Audit this Solidity withdraw() for reentrancy: it sends ETH to msg.sender first, then sets balance[msg.sender] = 0.",
+];
 
 const STEPS = ["found", "approved", "locked", "delivered", "judged", "settled"] as const;
 type Step = (typeof STEPS)[number];
@@ -97,15 +105,19 @@ export default function MarketConsole() {
   const [delivery, setDelivery] = useState(SAMPLES.translate.delivery);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [request, setRequest] = useState("");
+  const [order, setOrder] = useState<Order | null>(null);
+  /** Autopilot: requests still to run; null when the demo is not running. */
+  const [demoQueue, setDemoQueue] = useState<string[] | null>(null);
 
   useEffect(() => {
     void api<CatalogReply>("/api/market/providers").then(setCatalog).catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)));
   }, []);
 
-  const run = useCallback(async (work: () => Promise<void>) => {
+  const run = useCallback(async (work: () => Promise<void>): Promise<boolean> => {
     setBusy(true);
     setError(null);
-    try { await work(); } catch (e) { setError(e instanceof Error ? e.message : String(e)); } finally { setBusy(false); }
+    try { await work(); return true; } catch (e) { setError(e instanceof Error ? e.message : String(e)); setDemoQueue(null); return false; } finally { setBusy(false); }
   }, []);
 
   const loadApproval = useCallback(async (actionId?: string) => {
@@ -135,24 +147,67 @@ export default function MarketConsole() {
   }
 
   const startDeal = () => run(async () => {
-    setDeal(null); setDiscovery(null); setApproval(null);
+    setDeal(null); setDiscovery(null); setApproval(null); setOrder(null);
     const reply = await api<CreateReply>("/api/market/deals", { buyer: "buyer-agent", skill, task, strategy });
     setDeal(reply.deal);
     setDiscovery(reply.discovery);
     await loadApproval(reply.approvalActionId);
   });
 
+  const ask = useCallback((message: string) => run(async () => {
+    setDeal(null); setDiscovery(null); setApproval(null); setOrder(null);
+    const reply = await api<AskReply>("/api/market/ask", { buyer: "buyer-agent", message });
+    setOrder(reply.order);
+    setSkill(reply.order.skill);
+    setTask(reply.order.task);
+    setDelivery(SAMPLES[reply.order.skill]?.delivery ?? "");
+    setDeal(reply.deal);
+    setDiscovery(reply.discovery);
+    await loadApproval(reply.approvalActionId);
+  }), [run, loadApproval]);
+
   const deliver = () => run(async () => {
     if (!deal) return;
     setDeal((await api<DealReply>("/api/market/deals/deliver", { dealId: deal.id, output: delivery })).deal);
   });
 
-  const judgeDeal = () => run(async () => {
+  /** The provider's own agent does the job; without a model, the demo falls back to the sample, marked as manual. */
+  const work = useCallback((fallback: boolean) => run(async () => {
+    if (!deal) return;
+    try {
+      setDeal((await api<DealReply>("/api/market/deals/work", { dealId: deal.id })).deal);
+    } catch (e) {
+      const sample = SAMPLES[deal.skill]?.delivery;
+      if (!fallback || !sample) throw e;
+      setDeal((await api<DealReply>("/api/market/deals/deliver", { dealId: deal.id, output: sample })).deal);
+    }
+  }), [deal, run]);
+
+  const judgeDeal = useCallback(() => run(async () => {
     if (!deal) return;
     const reply = await api<JudgeReply>("/api/market/deals/judge", { dealId: deal.id });
     setDeal(reply.deal);
     await loadApproval(reply.approvalActionId);
-  });
+  }), [deal, run, loadApproval]);
+
+  // Autopilot: advance the current deal one step at a time; pause on a Selfie
+  // Check (the human finishes it); move to the next story once settled.
+  useEffect(() => {
+    if (!demoQueue || busy || approval) return;
+    const timer = window.setTimeout(() => {
+      if (!deal || deal.done) {
+        const [next, ...rest] = demoQueue;
+        if (next === undefined) { setDemoQueue(null); return; }
+        setDemoQueue(rest);
+        setRequest(next);
+        void ask(next);
+      } else if (deal.status === "funded") void work(true);
+      else if (deal.status === "delivered" && !deal.verdict) void judgeDeal();
+    }, deal?.done ? 2500 : 900);
+    return () => window.clearTimeout(timer);
+  }, [demoQueue, busy, approval, deal, ask, work, judgeDeal]);
+
+  const startDemo = () => { setDeal(null); setDiscovery(null); setApproval(null); setOrder(null); setDemoQueue([...DEMO_REQUESTS]); };
 
   const reached = useMemo(() => reachedSteps(deal), [deal]);
   const limit = catalog?.autoApproveLimitUsd ?? 1;
@@ -168,6 +223,9 @@ export default function MarketConsole() {
             <h1 className="mt-1 text-xl font-semibold">{t.market.console}</h1>
           </div>
           <div className="flex flex-wrap items-center gap-5">
+            {demoQueue
+              ? <span className="flex items-center gap-3"><span className="font-mono text-xs uppercase tracking-[0.12em] text-warn">{approval ? t.market.demoWaiting : t.market.demoRunning}</span><button type="button" onClick={() => setDemoQueue(null)} className="border border-border px-3 py-2 text-xs text-muted hover:text-foreground">{t.market.stopDemo}</button></span>
+              : <button type="button" disabled={busy} onClick={startDemo} className="border border-brand px-3 py-2 text-xs font-semibold text-brand hover:bg-brand/10 disabled:opacity-50">{t.market.runDemo}</button>}
             <Link href={`/${locale}/dashboard`} className="font-mono text-xs uppercase tracking-[0.12em] text-muted hover:text-foreground">{t.market.backToCopilot}</Link>
             <LanguageSwitcher locale={locale} label={t.language.label} switchTo={t.language.switchTo} />
           </div>
@@ -180,7 +238,13 @@ export default function MarketConsole() {
         {/* ------------------------------------------------ order + discovery */}
         <div className="grid content-start gap-px bg-border">
           <Panel title={t.market.orderHeading}>
-            <div className="grid grid-cols-2 gap-2">
+            <label className="block font-mono text-[10px] uppercase tracking-[0.14em] text-muted" htmlFor="market-ask">{t.market.askLabel}</label>
+            <textarea id="market-ask" value={request} onChange={(e) => setRequest(e.target.value)} rows={3} placeholder={t.market.askPlaceholder} className="mt-2 w-full resize-y border border-border bg-panel-raised px-3 py-2 text-sm" />
+            <button type="button" disabled={busy || !request.trim()} onClick={() => void ask(request)} className="mt-3 w-full bg-brand px-4 py-3 text-sm font-semibold text-background disabled:opacity-50">{t.market.askButton}</button>
+            {order && <p className="mt-3 border-l-2 border-brand px-3 text-xs text-foreground">{fill(t.market.understood, { skill: order.skill, by: t.market.parsedBy[order.parsedBy] })}{order.maxPriceUsd !== undefined ? ` · ≤ ${usd(order.maxPriceUsd)}` : ""}</p>}
+            <details className="mt-5 border-t border-border pt-4">
+            <summary className="cursor-pointer font-mono text-[10px] uppercase tracking-[0.14em] text-muted">{t.market.orFillForm}</summary>
+            <div className="mt-4 grid grid-cols-2 gap-2">
               <button type="button" onClick={() => choosePreset("translate")} className={`border p-3 text-left text-sm ${skill === "translate" ? "border-brand bg-brand/10" : "border-border bg-panel-raised"}`}><span className="block font-semibold">{t.market.presetSmall}</span><span className="mt-1 block text-xs text-muted">{t.market.presetSmallHint}</span></button>
               <button type="button" onClick={() => choosePreset("contract_audit")} className={`border p-3 text-left text-sm ${skill === "contract_audit" ? "border-brand bg-brand/10" : "border-border bg-panel-raised"}`}><span className="block font-semibold">{t.market.presetLarge}</span><span className="mt-1 block text-xs text-muted">{t.market.presetLargeHint}</span></button>
             </div>
@@ -196,7 +260,8 @@ export default function MarketConsole() {
                 {(["cheapest", "best_rated"] as const).map((option) => <label key={option} className="flex items-center gap-2"><input type="radio" name="strategy" checked={strategy === option} onChange={() => setStrategy(option)} />{option === "cheapest" ? t.market.cheapest : t.market.bestRated}</label>)}
               </div>
             </fieldset>
-            <button type="button" disabled={busy || !task.trim()} onClick={() => void startDeal()} className="mt-5 w-full bg-brand px-4 py-3 text-sm font-semibold text-background disabled:opacity-50">{t.market.findProvider}</button>
+            <button type="button" disabled={busy || !task.trim()} onClick={() => void startDeal()} className="mt-5 w-full border border-brand px-4 py-3 text-sm font-semibold text-brand disabled:opacity-50">{t.market.findProvider}</button>
+            </details>
             <p className="mt-3 text-xs text-muted">{fill(t.market.policyNote, { limit: usd(limit) })}</p>
           </Panel>
 
@@ -257,12 +322,21 @@ export default function MarketConsole() {
             <Panel title={t.market.providerHeading}>
               {deal.status === "funded" ? (
                 <>
-                  <label className="block font-mono text-[10px] uppercase tracking-[0.14em] text-muted" htmlFor="market-delivery">{t.market.deliveryLabel}</label>
-                  <textarea id="market-delivery" value={delivery} onChange={(e) => setDelivery(e.target.value)} rows={3} className="mt-2 w-full resize-y border border-border bg-panel-raised px-3 py-2 text-sm" />
-                  <p className="mt-1 text-xs text-muted">{t.market.deliverySimulated}</p>
-                  <button type="button" disabled={busy || !delivery.trim()} onClick={() => void deliver()} className="mt-3 w-full border border-brand px-4 py-3 text-sm font-semibold text-brand disabled:opacity-50">{t.market.deliver}</button>
+                  <button type="button" disabled={busy} onClick={() => void work(false)} className="w-full bg-brand px-4 py-3 text-sm font-semibold text-background disabled:opacity-50">{t.market.providerWork}</button>
+                  <details className="mt-4">
+                    <summary className="cursor-pointer font-mono text-[10px] uppercase tracking-[0.14em] text-muted">{t.market.manualDelivery}</summary>
+                    <label className="mt-3 block font-mono text-[10px] uppercase tracking-[0.14em] text-muted" htmlFor="market-delivery">{t.market.deliveryLabel}</label>
+                    <textarea id="market-delivery" value={delivery} onChange={(e) => setDelivery(e.target.value)} rows={3} className="mt-2 w-full resize-y border border-border bg-panel-raised px-3 py-2 text-sm" />
+                    <p className="mt-1 text-xs text-muted">{t.market.deliverySimulated}</p>
+                    <button type="button" disabled={busy || !delivery.trim()} onClick={() => void deliver()} className="mt-3 w-full border border-brand px-4 py-3 text-sm font-semibold text-brand disabled:opacity-50">{t.market.deliver}</button>
+                  </details>
                 </>
-              ) : <p className="whitespace-pre-wrap border border-border bg-panel-raised p-3 text-sm">{deal.output}</p>}
+              ) : (
+                <>
+                  <p className={`font-mono text-[10px] uppercase tracking-[0.14em] ${deal.deliveredBy === "provider_agent" ? "text-ok" : "text-warn"}`}>{deal.deliveredBy === "provider_agent" ? t.market.deliveredByAgent : t.market.deliveredManually}</p>
+                  <p className="mt-2 whitespace-pre-wrap border border-border bg-panel-raised p-3 text-sm">{deal.output}</p>
+                </>
+              )}
             </Panel>
           )}
 
