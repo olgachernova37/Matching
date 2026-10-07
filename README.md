@@ -34,6 +34,18 @@ receipt stops validating, server-side.
                  6. x402 payment runs only against a valid, matching receipt
 ```
 
+## New: agent marketplace (From Dusk Till Dawn #01)
+
+Buyer agents discover provider agents, lock payment in escrow, and an AI judge
+checks the delivery before money moves. Small deals run agent-to-agent; large
+deals and uncertain verdicts wait for the same Selfie Check gate. Settlement is
+simulated. What is base and what is new: [HACKATHON.md](HACKATHON.md).
+
+```bash
+npm run dev
+npm run market:demo        # story A ($0.02, no human) and story B ($25, Selfie Check)
+```
+
 ## How each sponsor is load-bearing
 
 | Sponsor | Role | Why it is not decorative |
