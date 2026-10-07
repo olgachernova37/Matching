@@ -5,12 +5,15 @@ export { SEED_PROVIDERS, getProvider, listProviders, listSkills } from "./catalo
 export { discover } from "./discovery.ts";
 export { applyEvent, describeFunds, isTerminal, nextStatus } from "./escrow.ts";
 export { judge, parseVerdict, settle } from "./judge.ts";
+export { canWork, doWork } from "./worker.ts";
+export { hasModel } from "./openai.ts";
 export {
   MarketError,
   cancelDeal,
   confirmFunding,
   createDeal,
   deliver,
+  performWork,
   getDeal,
   judgeDeal,
   present,

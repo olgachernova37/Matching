@@ -128,6 +128,8 @@ export interface Deal {
   /** Outcome the judge proposed when it escalated (applied only after a human approves). */
   proposedOutcome?: "release" | "refund";
   output?: string;
+  /** Who produced the output: the provider's own agent, or a person typing it in. */
+  deliveredBy?: "provider_agent" | "manual";
   verdict?: Verdict;
   createdAt: number;
   history: DealHistoryEntry[];

@@ -1,3 +1,4 @@
+import { chat, hasModel, type ModelOptions } from "./openai.ts";
 import { AUTO_APPROVE_LIMIT_USD, JUDGE_MIN_CONFIDENCE } from "./policy.ts";
 import type { Settlement, Verdict, VerdictKind } from "./types.ts";
 
@@ -16,13 +17,8 @@ export interface JudgeInput {
   output: string;
 }
 
-export type FetchLike = (input: string, init: RequestInit) => Promise<Response>;
-
-export interface JudgeOptions {
-  apiKey?: string;
-  model?: string;
-  fetchImpl?: FetchLike;
-}
+export type { FetchLike } from "./openai.ts";
+export type JudgeOptions = ModelOptions;
 
 const MAX_CHARS = 4000;
 const VERDICTS: readonly VerdictKind[] = ["accepted", "rejected", "uncertain"];
@@ -62,41 +58,15 @@ export function parseVerdict(raw: string): Verdict {
 }
 
 export async function judge(input: JudgeInput, options: JudgeOptions = {}): Promise<Verdict> {
-  const apiKey = (options.apiKey ?? process.env.OPENAI_API_KEY)?.trim();
-  if (!apiKey) return unavailable("No OPENAI_API_KEY is configured, so no model judged this delivery");
-  const model = (options.model ?? process.env.OPENAI_MODEL)?.trim() || "gpt-4o-mini";
-  const fetchImpl = options.fetchImpl ?? fetch;
-
-  const user = `ORDER:\n${input.task.slice(0, MAX_CHARS)}\n\nDELIVERY:\n${input.output.slice(0, MAX_CHARS)}`;
-  let response: Response;
-  try {
-    response = await fetchImpl("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify({
-        model,
-        temperature: 0,
-        response_format: { type: "json_object" },
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: user },
-        ],
-      }),
-    });
-  } catch (error) {
-    return unavailable(`The judge could not be reached: ${error instanceof Error ? error.message : "network error"}`);
-  }
-  if (!response.ok) return unavailable(`The judge returned HTTP ${response.status}`);
-
-  let body: unknown;
-  try {
-    body = await response.json();
-  } catch {
-    return unavailable("The judge's response was not JSON");
-  }
-  const content = (body as { choices?: { message?: { content?: unknown } }[] }).choices?.[0]?.message?.content;
-  if (typeof content !== "string") return unavailable("The judge's response had no message");
-  return parseVerdict(content);
+  if (!hasModel(options)) return unavailable("No OPENAI_API_KEY is configured, so no model judged this delivery");
+  const result = await chat({
+    ...options,
+    json: true,
+    system: SYSTEM_PROMPT,
+    user: `ORDER:\n${input.task.slice(0, MAX_CHARS)}\n\nDELIVERY:\n${input.output.slice(0, MAX_CHARS)}`,
+  });
+  if (!result.ok) return unavailable(result.reason);
+  return parseVerdict(result.content);
 }
 
 /**

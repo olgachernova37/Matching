@@ -4,10 +4,12 @@ import type { AgentAction, HumanGateReceipt } from "../types.ts";
 import { kv, RETENTION_SECONDS } from "../kv.ts";
 import { getPendingAction, getReceipt, savePendingAction } from "../agent/store.ts";
 import { hashAction } from "../worldid/hash.ts";
-import { listProviders } from "./catalog.ts";
+import { getProvider, listProviders } from "./catalog.ts";
 import { discover } from "./discovery.ts";
 import { applyEvent, describeFunds, isTerminal } from "./escrow.ts";
 import { judge, settle, type JudgeOptions } from "./judge.ts";
+import type { ModelOptions } from "./openai.ts";
+import { doWork } from "./worker.ts";
 import { fundingGate } from "./policy.ts";
 import { checkProviderWallet } from "./provider-risk.ts";
 import type { Deal, DealEvent, DiscoveryQuery, DiscoveryResult, Provider, ProviderRiskCheck, Verdict } from "./types.ts";
@@ -216,13 +218,24 @@ export async function confirmFunding(dealId: string): Promise<Deal> {
   return transition(deal, "approve", `Human approved with ${who}; $${deal.amountUsd} locked in escrow`);
 }
 
-/** Step 3: the provider hands in its work. */
-export async function deliver(dealId: string, output: string): Promise<Deal> {
+/** Step 3: the provider hands in its work (typed in by a person). */
+export async function deliver(dealId: string, output: string, by: "provider_agent" | "manual" = "manual", note = "Provider delivered its result (entered manually)"): Promise<Deal> {
   const text = output.trim();
   if (!text) throw new MarketError("INVALID_REQUEST", "output is required", 400);
   const deal = await requireDeal(dealId);
-  const delivered = await transition(deal, "deliver", "Provider delivered its result");
-  return saveDeal({ ...delivered, output: text.slice(0, 8000) });
+  const delivered = await transition(deal, "deliver", note);
+  return saveDeal({ ...delivered, output: text.slice(0, 8000), deliveredBy: by });
+}
+
+/** Step 3, autonomous: the provider's own agent does the job and delivers it. */
+export async function performWork(dealId: string, options: ModelOptions = {}): Promise<Deal> {
+  const deal = await requireDeal(dealId);
+  if (deal.status !== "funded") throw new MarketError("INVALID_TRANSITION", `The provider starts only once funds are in escrow; this deal is ${deal.status}`, 409);
+  const provider = getProvider(deal.providerId);
+  if (!provider) throw new MarketError("NO_PROVIDER", `Provider ${deal.providerId} is no longer in the catalog`, 404);
+  const result = await doWork(provider, deal.skill, deal.task, options);
+  if (!result.ok) throw new MarketError("PROVIDER_FAILED", `${provider.name} could not do the job: ${result.reason}`, 502);
+  return deliver(dealId, result.output, "provider_agent", `${provider.name}'s agent did the job (${result.model}) and delivered it`);
 }
 
 export interface JudgeDealResult {
