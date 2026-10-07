@@ -7,6 +7,7 @@ export { applyEvent, describeFunds, isTerminal, nextStatus } from "./escrow.ts";
 export { judge, parseVerdict, settle } from "./judge.ts";
 export { canWork, doWork } from "./worker.ts";
 export { hasModel } from "./openai.ts";
+export { parseWithKeywords, understand, validateOrder, type Order } from "./buyer.ts";
 export {
   MarketError,
   cancelDeal,
