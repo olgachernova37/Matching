@@ -12,7 +12,7 @@ const cleanWallet = async (address: string): Promise<ProviderRisk> => ({ address
 
 test("a provider agent returns the model's work", async () => {
   const result = await doWork(lingo, "translate", "Translate 'hello' into Czech", { apiKey: "k", fetchImpl: replies("  Ahoj  ") });
-  assert.deepEqual(result, { ok: true, output: "Ahoj", model: "gpt-4o-mini" });
+  assert.deepEqual(result, { ok: true, output: "Ahoj", model: "gpt-4o-mini", via: "openai" });
 });
 
 test("a provider never works outside its skills", async () => {

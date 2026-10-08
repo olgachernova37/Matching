@@ -8,8 +8,7 @@ import { getProvider, listProviders } from "./catalog.ts";
 import { discover } from "./discovery.ts";
 import { applyEvent, describeFunds, isTerminal } from "./escrow.ts";
 import { judge, settle, type JudgeOptions } from "./judge.ts";
-import type { ModelOptions } from "./openai.ts";
-import { doWork } from "./worker.ts";
+import { doWork, type WorkerOptions } from "./worker.ts";
 import { fundingGate } from "./policy.ts";
 import { checkProviderWallet } from "./provider-risk.ts";
 import type { Deal, DealEvent, DiscoveryQuery, DiscoveryResult, Provider, ProviderRiskCheck, Verdict } from "./types.ts";
@@ -228,14 +227,14 @@ export async function deliver(dealId: string, output: string, by: "provider_agen
 }
 
 /** Step 3, autonomous: the provider's own agent does the job and delivers it. */
-export async function performWork(dealId: string, options: ModelOptions = {}): Promise<Deal> {
+export async function performWork(dealId: string, options: WorkerOptions = {}): Promise<Deal> {
   const deal = await requireDeal(dealId);
   if (deal.status !== "funded") throw new MarketError("INVALID_TRANSITION", `The provider starts only once funds are in escrow; this deal is ${deal.status}`, 409);
   const provider = getProvider(deal.providerId);
   if (!provider) throw new MarketError("NO_PROVIDER", `Provider ${deal.providerId} is no longer in the catalog`, 404);
   const result = await doWork(provider, deal.skill, deal.task, options);
   if (!result.ok) throw new MarketError("PROVIDER_FAILED", `${provider.name} could not do the job: ${result.reason}`, 502);
-  return deliver(dealId, result.output, "provider_agent", `${provider.name}'s agent did the job (${result.model}) and delivered it`);
+  return deliver(dealId, result.output, "provider_agent", result.via === "apify" ? `${provider.name} ran an Apify Actor (${result.model}) and delivered a report with sources` : `${provider.name}'s agent did the job (${result.model}) and delivered it`);
 }
 
 export interface JudgeDealResult {

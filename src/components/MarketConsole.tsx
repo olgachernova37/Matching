@@ -35,6 +35,7 @@ async function api<T>(path: string, body?: Record<string, unknown>): Promise<T> 
 const SAMPLES: Record<string, { task: string; delivery: string }> = {
   translate: { task: "Translate into Czech: \"Good morning, the meeting is at 10.\"", delivery: "Dobré ráno, schůzka je v 10." },
   summarize: { task: "Summarize in one line: \"The team shipped escrow, a judge and discovery overnight, and every payout now waits for proof of delivery.\"", delivery: "The team shipped an escrowed agent marketplace overnight where payouts follow verified delivery." },
+  web_research: { task: "Research: what is the Masumi network for AI agents, and which blockchain does it use?", delivery: "Masumi is a payment network for AI agents with a registry and escrow, built on Cardano." },
   contract_audit: { task: "Check this withdraw() for reentrancy: it sends ETH first, then sets balance[msg.sender] = 0.", delivery: "Vulnerable: the external call runs before the balance is zeroed, so a malicious receiver can re-enter withdraw(). Fix: zero the balance first (checks-effects-interactions) or add a reentrancy guard." },
 };
 

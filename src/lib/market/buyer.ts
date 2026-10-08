@@ -28,6 +28,7 @@ const KEYWORDS: Record<string, RegExp> = {
   translate: /translat|переклад|перекла|přelož|překlad/i,
   summarize: /summar|tl;?dr|підсум|стисн|коротко|shrn|souhrn/i,
   contract_audit: /audit|reentran|vulnerab|smart contract|контракт|вразлив|аудит|kontrakt|zranitel/i,
+  web_research: /research|look up|search the web|find out|find sources|дослідж|знайди|пошукай|з'ясуй|vyhledej|najdi|zjisti/i,
 };
 const CHEAP = /cheap|cheapest|lowest price|дешев|найдешев|levn/i;
 const BEST = /best|top rated|highest rated|найкращ|рейтинг|nejlepš|hodnocen/i;

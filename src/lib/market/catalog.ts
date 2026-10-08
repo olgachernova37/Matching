@@ -44,6 +44,16 @@ export const SEED_PROVIDERS: readonly Provider[] = Object.freeze([
     rating: 4.7,
     jobs: 19,
   },
+  {
+    // The one provider that is an external service: it runs an Apify Actor.
+    id: "apify-scout",
+    name: "Apify Scout",
+    skills: ["web_research"],
+    priceUsd: 0.1,
+    payTo: "0x5555555555555555555555555555555555555555",
+    rating: 4.6,
+    jobs: 54,
+  },
 ]);
 
 /**

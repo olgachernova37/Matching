@@ -5,7 +5,8 @@ export { SEED_PROVIDERS, getProvider, listProviders, listSkills } from "./catalo
 export { discover } from "./discovery.ts";
 export { applyEvent, describeFunds, isTerminal, nextStatus } from "./escrow.ts";
 export { judge, parseVerdict, settle } from "./judge.ts";
-export { canWork, doWork } from "./worker.ts";
+export { canWork, doWork, researchActor, researchQuery } from "./worker.ts";
+export { hasApify, runActor, toSources } from "./apify.ts";
 export { hasModel } from "./openai.ts";
 export { parseWithKeywords, understand, validateOrder, type Order } from "./buyer.ts";
 export {

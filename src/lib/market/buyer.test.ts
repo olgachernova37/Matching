@@ -15,6 +15,8 @@ test("keywords understand requests in English, Ukrainian and Czech", () => {
     ["Summarize this article in one line", "summarize"],
     ["Коротко підсумуй цей текст", "summarize"],
     ["Audit this withdraw() for reentrancy", "contract_audit"],
+    ["Research: who builds the Masumi network?", "web_research"],
+    ["Знайди, хто розробляє Masumi", "web_research"],
   ];
   for (const [message, skill] of cases) {
     const result = parseWithKeywords(message, skills);
