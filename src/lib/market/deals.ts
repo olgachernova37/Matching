@@ -249,7 +249,7 @@ export async function createDeal(input: CreateDealInput, options: CreateDealOpti
   if (!needsHuman) {
     deal = await saveDeal(deal);
     try {
-      deal = await lockFunds(deal, `$${deal.amountUsd} is within the limit and the provider's wallet passed the check — agents approved it without a human; funds locked in escrow`);
+      deal = await lockFunds(deal, `$${deal.amountUsd} is within the limit and no gate was triggered — agents approved it without a human; funds locked in escrow`);
       return { deal, discovery };
     } catch (error) {
       if (!(error instanceof MarketError)) throw error;
