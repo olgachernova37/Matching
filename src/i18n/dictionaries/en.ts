@@ -140,7 +140,7 @@ export const en = {
   },
   market: {
     graphAdvisory: "For information only (MARKET_GRAPH_GATE=advisory): it does not stop the deal",
-    onchainBanner: "Real testnet money: USDC on Base Sepolia. Hard caps in code: {per} per payment, {day} per day (spent today: {spent})",
+    onchainBanner: "Real testnet money: USDC on {network} (testnet). Hard caps in code: {per} per payment, {day} per day (spent today: {spent})",
     escrowWallet: "escrow wallet",
     txLocked: "Locked on chain (buyer → escrow)",
     txReleased: "Paid on chain (escrow → provider)",
@@ -171,7 +171,7 @@ export const en = {
     manualDelivery: "Or type the result yourself",
     deliveredByAgent: "Done by the provider's agent",
     deliveredManually: "Entered manually",
-    simulatedBanner: "SIMULATED — no money moves: escrow is a ledger record. Set the wallet keys to settle on Base Sepolia.",
+    simulatedBanner: "SIMULATED — no money moves: escrow is a ledger record. Set the wallet keys to settle on a testnet.",
     product: "Agent Marketplace",
     console: "Deal console",
     backToCopilot: "Copilot console",

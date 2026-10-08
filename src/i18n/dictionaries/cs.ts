@@ -135,7 +135,7 @@ export const cs: Dictionary = {
 
   market: {
     graphAdvisory: "Jen pro informaci (MARKET_GRAPH_GATE=advisory): obchod to nezastaví",
-    onchainBanner: "Skutečné testovací peníze: USDC na Base Sepolia. Pevné limity v kódu: {per} za platbu, {day} za den (dnes utraceno: {spent})",
+    onchainBanner: "Skutečné testovací peníze: USDC na {network} (testnet). Pevné limity v kódu: {per} za platbu, {day} za den (dnes utraceno: {spent})",
     escrowWallet: "peněženka escrow",
     txLocked: "Uzamčeno na blockchainu (kupující → escrow)",
     txReleased: "Vyplaceno na blockchainu (escrow → dodavatel)",
@@ -166,7 +166,7 @@ export const cs: Dictionary = {
     manualDelivery: "Nebo zadejte výsledek sami",
     deliveredByAgent: "Hotovo agentem dodavatele",
     deliveredManually: "Zadáno ručně",
-    simulatedBanner: "SIMULATED — peníze se nehýbou: escrow je záznam v evidenci. Nastavte klíče peněženek pro vypořádání na Base Sepolia.",
+    simulatedBanner: "SIMULATED — peníze se nehýbou: escrow je záznam v evidenci. Nastavte klíče peněženek pro vypořádání na testnetu.",
     product: "Tržiště agentů",
     console: "Konzole obchodu",
     backToCopilot: "Konzole kopilota",

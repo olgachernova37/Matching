@@ -1,4 +1,4 @@
-import { AUTO_APPROVE_LIMIT_USD, graphGateMode, listProviders, listSkills, settlementRail, spendCaps, spentToday } from "@/lib/market";
+import { AUTO_APPROVE_LIMIT_USD, NETWORKS, graphGateMode, listProviders, listSkills, settlementRail, spendCaps, spentToday } from "@/lib/market";
 
 /**
  * The provider catalog buyer agents discover from (demo data — see
@@ -11,7 +11,13 @@ export async function GET(): Promise<Response> {
     providers: listProviders(),
     skills: listSkills(),
     autoApproveLimitUsd: AUTO_APPROVE_LIMIT_USD,
-    settlement: { mode: rail.mode, buyerAddress: rail.buyerAddress, escrowAddress: rail.escrowAddress, network: rail.mode === "base-sepolia" ? "Base Sepolia (testnet)" : null },
+    settlement: {
+      mode: rail.mode,
+      network: rail.mode === "simulated" ? null : NETWORKS[rail.mode].label,
+      buyerAddress: rail.buyerAddress,
+      escrowAddress: rail.escrowAddress,
+      escrowUrl: rail.explorer && rail.escrowAddress ? `${rail.explorer}/address/${rail.escrowAddress}` : null,
+    },
     caps: { ...spendCaps(), spentTodayUsd: await spentToday() },
     graphGate: graphGateMode(),
   });

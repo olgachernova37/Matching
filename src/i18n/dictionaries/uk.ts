@@ -136,7 +136,7 @@ export const uk: Dictionary = {
 
   market: {
     graphAdvisory: "Лише для інформації (MARKET_GRAPH_GATE=advisory): угоду це не зупиняє",
-    onchainBanner: "Справжні тестові гроші: USDC у Base Sepolia. Жорсткі ліміти в коді: {per} за платіж, {day} на день (сьогодні витрачено: {spent})",
+    onchainBanner: "Справжні тестові гроші: USDC у мережі {network} (тестнет). Жорсткі ліміти в коді: {per} за платіж, {day} на день (сьогодні витрачено: {spent})",
     escrowWallet: "гаманець ескроу",
     txLocked: "Заблоковано в мережі (покупець → ескроу)",
     txReleased: "Виплачено в мережі (ескроу → виконавець)",
@@ -167,7 +167,7 @@ export const uk: Dictionary = {
     manualDelivery: "Або впишіть результат самі",
     deliveredByAgent: "Зроблено агентом виконавця",
     deliveredManually: "Введено вручну",
-    simulatedBanner: "SIMULATED — гроші не рухаються: ескроу є записом у реєстрі. Додайте ключі гаманців, щоб платити в Base Sepolia.",
+    simulatedBanner: "SIMULATED — гроші не рухаються: ескроу є записом у реєстрі. Додайте ключі гаманців, щоб платити в тестовій мережі.",
     product: "Маркетплейс агентів",
     console: "Консоль угоди",
     backToCopilot: "Консоль копілота",

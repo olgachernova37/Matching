@@ -1,11 +1,12 @@
 import { createPublicClient, createWalletClient, erc20Abi, http, isAddress, parseUnits, type Address, type Hex } from "viem";
 import { privateKeyToAccount, type PrivateKeyAccount } from "viem/accounts";
-import { baseSepolia } from "viem/chains";
+import { baseSepolia, sepolia, type Chain } from "viem/chains";
 
 /**
  * Settlement rails: where escrowed money actually moves.
  *
- * - "base-sepolia": real USDC transfers on the Base Sepolia testnet.
+ * - "base-sepolia" (default) or "sepolia" (MARKET_CHAIN=sepolia): real USDC
+ *   transfers on that testnet.
  *     lock    buyer agent wallet  → escrow agent wallet
  *     release escrow agent wallet → provider's payout address
  *     refund  escrow agent wallet → buyer agent wallet
@@ -13,7 +14,7 @@ import { baseSepolia } from "viem/chains";
  * - "simulated": no keys configured; nothing moves and every deal says so.
  *
  * Keys come only from environment variables, never from the repository:
- *   MARKET_BUYER_PRIVATE_KEY, MARKET_ESCROW_PRIVATE_KEY, BASE_SEPOLIA_RPC_URL.
+ *   MARKET_BUYER_PRIVATE_KEY, MARKET_ESCROW_PRIVATE_KEY, MARKET_CHAIN, MARKET_RPC_URL.
  *
  * Every transfer is simulated against the chain before it is sent, so a
  * transfer that would fail (no USDC, no gas) is refused BEFORE broadcast and
@@ -23,10 +24,21 @@ import { baseSepolia } from "viem/chains";
 
 /** Circle's USDC on Base Sepolia (developers.circle.com/stablecoins/usdc-contract-addresses). */
 export const USDC_BASE_SEPOLIA: Address = "0x036CbD53842c5426634e7929541eC2318f3dCF7e";
-const EXPLORER = "https://sepolia.basescan.org/tx/";
+
+export type Network = "base-sepolia" | "sepolia";
+
+/** MARKET_CHAIN picks the testnet; Circle's USDC contract on each. */
+export const NETWORKS: Record<Network, { chain: Chain; usdc: Address; explorer: string; label: string }> = {
+  "base-sepolia": { chain: baseSepolia, usdc: USDC_BASE_SEPOLIA, explorer: "https://sepolia.basescan.org", label: "Base Sepolia" },
+  sepolia: { chain: sepolia, usdc: "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238", explorer: "https://sepolia.etherscan.io", label: "Ethereum Sepolia" },
+};
+
+export function selectedNetwork(): Network {
+  return process.env.MARKET_CHAIN?.trim().toLowerCase() === "sepolia" ? "sepolia" : "base-sepolia";
+}
 
 export interface TxRecord {
-  network: "base-sepolia";
+  network: Network;
   hash: string;
   url: string;
   from: string;
@@ -40,7 +52,9 @@ export type TransferResult =
   | { ok: false; reason: string; broadcast: boolean };
 
 export interface SettlementRail {
-  mode: "simulated" | "base-sepolia";
+  mode: "simulated" | Network;
+  /** Block explorer base URL, null when simulated. */
+  explorer: string | null;
   buyerAddress: string | null;
   escrowAddress: string | null;
   lock(amountUsd: number): Promise<TransferResult>;
@@ -50,6 +64,7 @@ export interface SettlementRail {
 
 export const simulatedRail: SettlementRail = {
   mode: "simulated",
+  explorer: null,
   buyerAddress: null,
   escrowAddress: null,
   lock: async () => ({ ok: true, tx: null }),
@@ -68,21 +83,25 @@ function accountFrom(name: string): PrivateKeyAccount | null {
   return privateKeyToAccount(key);
 }
 
-function baseSepoliaRail(buyer: PrivateKeyAccount, escrow: PrivateKeyAccount): SettlementRail {
-  const transport = http(process.env.BASE_SEPOLIA_RPC_URL?.trim() || undefined);
-  const publicClient = createPublicClient({ chain: baseSepolia, transport });
+function testnetRail(network: Network, buyer: PrivateKeyAccount, escrow: PrivateKeyAccount): SettlementRail {
+  const { chain, usdc, explorer } = NETWORKS[network];
+  // viem's default Sepolia RPC needs a thirdweb client id, so use a public node instead.
+  const rpc = process.env.MARKET_RPC_URL?.trim()
+    || (network === "base-sepolia" ? process.env.BASE_SEPOLIA_RPC_URL?.trim() : "https://ethereum-sepolia-rpc.publicnode.com");
+  const transport = http(rpc || undefined);
+  const publicClient = createPublicClient({ chain, transport });
 
   async function transfer(from: PrivateKeyAccount, to: string, amountUsd: number): Promise<TransferResult> {
     if (!isAddress(to)) return { ok: false, reason: `Not a valid address: ${to}`, broadcast: false };
     if (!Number.isFinite(amountUsd) || amountUsd <= 0) return { ok: false, reason: "Amount must be positive", broadcast: false };
     const value = parseUnits(amountUsd.toFixed(6), 6);
-    const wallet = createWalletClient({ account: from, chain: baseSepolia, transport });
+    const wallet = createWalletClient({ account: from, chain, transport });
 
     let hash: Hex;
     try {
       // Dry run first: insufficient USDC or gas fails here, before anything is sent.
       const { request } = await publicClient.simulateContract({
-        account: from, address: USDC_BASE_SEPOLIA, abi: erc20Abi, functionName: "transfer", args: [to as Address, value],
+        account: from, address: usdc, abi: erc20Abi, functionName: "transfer", args: [to as Address, value],
       });
       hash = await wallet.writeContract(request);
     } catch (error) {
@@ -94,11 +113,12 @@ function baseSepoliaRail(buyer: PrivateKeyAccount, escrow: PrivateKeyAccount): S
     } catch (error) {
       return { ok: false, reason: `Transaction ${hash} was sent but not confirmed yet: ${shortError(error)}`, broadcast: true };
     }
-    return { ok: true, tx: { network: "base-sepolia", hash, url: `${EXPLORER}${hash}`, from: from.address, to, amountUsd, at: Date.now() } };
+    return { ok: true, tx: { network, hash, url: `${explorer}/tx/${hash}`, from: from.address, to, amountUsd, at: Date.now() } };
   }
 
   return {
-    mode: "base-sepolia",
+    mode: network,
+    explorer,
     buyerAddress: buyer.address,
     escrowAddress: escrow.address,
     lock: (amountUsd) => transfer(buyer, escrow.address, amountUsd),
@@ -121,7 +141,7 @@ export function settlementRail(): SettlementRail {
   if (cached) return cached;
   const buyer = accountFrom("MARKET_BUYER_PRIVATE_KEY");
   const escrow = accountFrom("MARKET_ESCROW_PRIVATE_KEY");
-  cached = buyer && escrow ? baseSepoliaRail(buyer, escrow) : simulatedRail;
+  cached = buyer && escrow ? testnetRail(selectedNetwork(), buyer, escrow) : simulatedRail;
   return cached;
 }
 

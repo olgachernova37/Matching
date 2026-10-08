@@ -30,6 +30,7 @@ function fakeChain() {
   };
   const rail: SettlementRail = {
     mode: "base-sepolia",
+    explorer: "https://sepolia.basescan.org",
     buyerAddress: "0x00000000000000000000000000000000000000b0",
     escrowAddress: "0x00000000000000000000000000000000000000e0",
     lock: async (a) => run("lock", "escrow", a),
@@ -125,4 +126,13 @@ test("advisory mode keeps the Graph evidence but does not gate on it", () => {
   assert.equal(fundingGate(0.05, empty, "enforce").length, 1);
   assert.deepEqual(fundingGate(0.05, empty, "advisory"), []);
   assert.equal(fundingGate(2, empty, "advisory").length, 1);
+});
+
+test("MARKET_CHAIN picks Ethereum Sepolia with Circle's USDC there", async () => {
+  const { NETWORKS, selectedNetwork } = await import("./settlement.ts");
+  process.env.MARKET_CHAIN = "sepolia";
+  assert.equal(selectedNetwork(), "sepolia");
+  assert.equal(NETWORKS.sepolia.usdc, "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238");
+  delete process.env.MARKET_CHAIN;
+  assert.equal(selectedNetwork(), "base-sepolia");
 });

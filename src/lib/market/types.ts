@@ -115,8 +115,8 @@ export interface Deal {
   payTo: string;
   amountUsd: number;
   status: DealStatus;
-  /** "base-sepolia": real testnet USDC moved; "simulated": nothing moved. */
-  settlement: "simulated" | "base-sepolia";
+  /** A testnet name: real testnet USDC moved; "simulated": nothing moved. */
+  settlement: "simulated" | "base-sepolia" | "sepolia";
   /** The buyer agent's wallet (refunds go here) when settlement is on chain. */
   buyerAddress?: string | null;
   /** buyer → escrow transfer that locked the funds. */
