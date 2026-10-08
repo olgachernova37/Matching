@@ -5,7 +5,7 @@
 Тривалість пітчу ~**2,5 хвилини**, далі запитання журі. Якщо дадуть менше часу, пропусти частину 4.
 
 **Перед виходом:**
-- [ ] Відкрита вкладка `echobrief.online/en/market`, масштаб 110%
+- [ ] Відкрита вкладка `<адреса Matching з Vercel>/en/market`, угорі **зелений** банер «Real testnet money», масштаб 110%
 - [ ] Телефон із World App під рукою
 - [ ] Друга вкладка: `HACKATHON.md` на GitHub
 - [ ] Якщо Wi‑Fi поганий — роздати інтернет з телефона
@@ -30,11 +30,11 @@
 
 > "Let me show it. First, a small job: a translation for two cents. The agent understands my request, picks the cheapest translator, checks the wallet — clean — and pays through escrow after the judge accepts. No human needed."
 >
-> "Now a big job: a smart contract audit for twenty-five dollars. This is above the limit, so it stops and asks me. I do a Selfie Check — the proof is bound to this exact deal. If anyone changes the amount or the address, the proof stops working."
+> "Now a big job: a smart contract audit for two dollars. This is above the limit, so it stops and asks me. I do a Selfie Check — the proof is bound to this exact deal. If anyone changes the amount or the address, the proof stops working."
 
 *«Покажу. Спершу мала робота: переклад за два центи. Агент розуміє мій запит, обирає найдешевшого перекладача, перевіряє гаманець — чистий — і платить через ескроу після того, як суддя прийняв роботу. Людина не потрібна.»*
 
-*«Тепер велика робота: аудит смарт-контракту за двадцять п'ять доларів. Це більше за ліміт, тож система зупиняється і питає мене. Я роблю Selfie Check — доказ прив'язаний саме до цієї угоди. Якщо хтось змінить суму чи адресу, доказ перестане працювати.»*
+*«Тепер велика робота: аудит смарт-контракту за два долари. Це більше за ліміт, тож система зупиняється і питає мене. Я роблю Selfie Check — доказ прив'язаний саме до цієї угоди. Якщо хтось змінить суму чи адресу, доказ перестане працювати.»*
 
 💡 Якщо Selfie Check на місці не працює: **не вдавай**. Скажи: *"The network here blocks the World App, so I will show this part in the video."* — «Мережа тут блокує World App, тож цю частину я покажу у відео.»
 
@@ -48,9 +48,9 @@
 
 **Покажи:** вкладку з `HACKATHON.md`
 
-> "To be clear about what is real: payments are simulated — escrow is a record, not money on chain yet. The Selfie Check and The Graph data come from my earlier project. The marketplace — discovery, escrow, the judge and the agents — is new for this hackathon. Everything is listed in HACKATHON.md."
+> "To be clear about what is real: the money moves for real — testnet USDC on Base Sepolia, you can open every transaction on BaseScan. The escrow is an agent-held wallet, not a smart contract yet. Our base was built before tonight, with the mentors' OK; tonight we made the payments real, with hard caps and no double payments. HACKATHON.md lists exactly what is new."
 
-*«Щоб було ясно, що справжнє: платежі симульовані — ескроу поки що є записом, а не грошима в блокчейні. Selfie Check і дані The Graph — з мого попереднього проєкту. Маркетплейс — пошук виконавця, ескроу, суддя й агенти — новий, зроблений для цього хакатону. Усе розписано в HACKATHON.md.»*
+*«Щоб було ясно, що справжнє: гроші рухаються насправді — тестові USDC у Base Sepolia, кожну транзакцію можна відкрити на BaseScan. Ескроу — це гаманець агента, поки що не смарт-контракт. Основа зроблена до сьогоднішньої ночі, з дозволу менторів; цієї ночі ми зробили платежі справжніми, з жорсткими лімітами і без подвійних оплат. HACKATHON.md точно показує, що нове.»*
 
 ## 6. Фінал · 10 секунд
 
@@ -63,14 +63,14 @@
 ## Запитання журі — готові відповіді
 
 **"Did you build this before the hackathon?"** — «Ви зробили це до хакатону?»
-> "The Selfie Check gate and The Graph risk engine are from my September project, ETHOnline. The marketplace on top is new. The commit history and HACKATHON.md show exactly what is old and what is new."
+> "Yes, the base — the copilot and the marketplace logic — is from my earlier work, and the mentors said reusing it is fine. Tonight I made the payments real on Base Sepolia, added hard spending caps and once-only payments. The commit times and HACKATHON.md show exactly what is old and what is new."
 
-*«Selfie Check і оцінка ризику The Graph — з мого вересневого проєкту для ETHOnline. Маркетплейс поверх них — новий. Історія комітів і HACKATHON.md точно показують, що старе, а що нове.»*
+*«Так, основа — копілот і логіка маркетплейсу — з моєї попередньої роботи, і ментори сказали, що це можна. Цієї ночі я зробила платежі справжніми в Base Sepolia, додала жорсткі ліміти витрат і однократні платежі. Час комітів і HACKATHON.md точно показують, що старе, а що нове.»*
 
-**"Why is the escrow not on chain?"** — «Чому ескроу не в блокчейні?»
-> "One night was not enough to do it safely. The escrow rules are already code with tests — pay only after delivery, pay only once. The next step is to move the money into a testnet contract, or into Masumi's escrow."
+**"Why is the escrow a wallet, not a contract?"** — «Чому ескроу — гаманець, а не контракт?»
+> "The money is on chain, but the escrow is held by an agent wallet. A contract was too risky for one night. The rules are code with tests — pay only after delivery, pay only once, hard caps. The next step is a small escrow contract, or Masumi's escrow."
 
-*«Однієї ночі не вистачило, щоб зробити це безпечно. Правила ескроу вже є кодом із тестами — платити лише після здачі, платити лише раз. Наступний крок — перенести гроші в контракт у тестовій мережі або в ескроу Masumi.»*
+*«Гроші в блокчейні, але ескроу тримає гаманець агента. Контракт за одну ніч — завеликий ризик. Правила є кодом із тестами — платити лише після здачі, лише раз, жорсткі ліміти. Наступний крок — невеликий контракт ескроу або ескроу Masumi.»*
 
 **"What if the judge is wrong?"** — «А якщо суддя помилиться?»
 > "The judge only gives advice. On small deals a wrong answer costs cents. On big deals, or when the judge is not sure, a human makes the final decision."
