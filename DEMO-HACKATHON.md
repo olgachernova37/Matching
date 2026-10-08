@@ -1,138 +1,79 @@
-# 🎬 Демо-відео для From Dusk Till Dawn #01 — план запису
+# 🎬 Демо-відео — From Dusk Till Dawn #01 (Agentic Economy)
 
-Відкрий у VS Code і натисни **`Ctrl+Shift+V`**, щоб файл став гарно відформатованим.
-Тримай його поруч під час запису і читай текст звідси.
-
-**Правила хакатону:** відео **2 хвилини**, здати разом із кодом до **07:14**.
-Код має бути заморожений до 07:14, тож записуй, коли все вже працює.
+**Правила:** відео **не довше 90 секунд**. Його і репозиторій треба подати в HQ **до 07:14**.
+Очікування можна прискорювати, а **збої вирізати не можна**. Кешований запуск підписуй.
 
 ---
 
-## 1. Перед записом (обов'язково, ~15 хвилин)
+## 1. Перед записом (обов'язково)
 
-На сайті (у налаштуваннях хостингу) або в `.env.local` мають бути:
+У Vercel → Environment Variables мають стояти:
 
-- [ ] **`OPENAI_API_KEY`** — без нього покупець не розуміє запит моделлю, виконавець не працює, а суддя кожну угоду віддає людині
-- [ ] **`MARKET_PROVIDER_ADDRESSES`** — справжні гаманці з історією на Uniswap, наприклад твої. Без них навіть мала угода піде на Selfie Check:
-  ```
-  MARKET_PROVIDER_ADDRESSES={"lingo-fast":"0x…","audit-hawk":"0x…"}
-  ```
-- [ ] **`GRAPH_API_KEY`** і ключі World ID — вони вже є з основного проєкту
+- [ ] `MARKET_BUYER_PRIVATE_KEY` і `MARKET_ESCROW_PRIVATE_KEY` — тестові гаманці (на Buyer є USDC, на обох є трохи ETH у Base Sepolia)
+- [ ] `MARKET_PROVIDER_ADDRESSES` — гаманець, куди йдуть виплати виконавцям
+- [ ] `MARKET_GRAPH_GATE=advisory`
+- [ ] `OPENAI_API_KEY`
+- [ ] після змін зроблено **Redeploy**
 
-Перевір на сайті, що працює:
-1. Відкрий `/en/market`, натисни **Run the demo** і пройди обидві історії до кінця без запису
-2. Мала угода має пройти **без** Selfie Check, а на плитці The Graph має бути зелений значок **Live**
-3. Якщо щось не так — спершу виправ, потім записуй
+Перевір на сайті `/en/market`:
+1. Угорі **зелений** банер «Real testnet money: USDC on Base Sepolia». Якщо банер жовтий, значить ключі не підхопилися
+2. Прогони **Run the demo** від початку до кінця без запису
+3. Посилання на BaseScan відкриваються і показують транзакцію **Success**
 
-Як готувати екран:
-- `Ctrl+Shift+B` — сховати закладки
-- Відкрити рівно одну вкладку: `https://echobrief.online/en/market`
-- Масштаб **110%** (`Ctrl` + `+`)
-- `Win+A` → «Не турбувати»
-- Телефон заряджений, World App відкритий
-- **Ніколи не показувати:** `.env.local`, налаштування Vercel, ключі
-
-## 2. Як записувати
-
-Як і минулого разу: **кожну сцену окремо** (`Win+Alt+R`), потім склеїти в **Clipchamp**.
-Паузи, коли агент «думає» або ти робиш селфі, — вирізай. Інакше 2 хвилини не вмістяться.
+Підготовка екрана: закладки сховати (`Ctrl+Shift+B`), одна вкладка з `/en/market`, масштаб 110%, режим «Не турбувати», телефон із World App під рукою. **Ключі й налаштування Vercel у кадр не потрапляють.**
 
 ---
 
-## 3. Сцени
+## 2. Сцени (разом ~85 секунд)
 
-### 🎬 Сцена 1 — Проблема · 0:00–0:15
+### 🎬 1 · Проблема · 0:00–0:10
+**Екран:** `/en/market`, видно зелений банер
 
-**Екран:** `/en/market`, ще нічого не натиснуто
+> "Agents can hire other agents — but every payment still ends with a human and a credit card. Here, agents pay each other with real money, inside hard limits."
 
-**Що говорити:**
-> "AI agents can now hire other agents and pay them. But who checks the work? And who stops a big payment to the wrong agent? This is a marketplace where agents trade alone, and a human steps in only when the risk is real."
+*«Агенти можуть наймати інших агентів — але кожен платіж досі закінчується людиною з карткою. Тут агенти платять одне одному справжніми грошима, у жорстких межах.»*
 
-*Переклад: «AI-агенти вже можуть наймати інших агентів і платити їм. Але хто перевіряє роботу? І хто зупинить великий платіж не тому агенту? Це маркетплейс, де агенти торгують самі, а людина втручається, лише коли ризик справжній.»*
+### 🎬 2 · Мала угода, без людини · 0:10–0:40
+**Що робити:** увімкни **🔊 Voice**. Встав у поле **Ask in your own words**:
+```
+Translate into Czech, cheapest provider please: "Good morning, the meeting is at 10."
+```
+Натисни **Ask the buyer agent** → **Let the provider's agent do the job** → **Ask the judge**. Покажи два зелені посилання на транзакції і клікни одне, щоб відкрився BaseScan.
 
----
+> "The buyer agent finds the cheapest translator. Two cents is under the limit, so no human is needed: it locks real USDC in escrow on Base Sepolia. The provider agent does the job, the judge agent accepts it, and escrow pays the provider. Two real transactions — here on BaseScan."
 
-### 🎬 Сцена 2 — Мала угода, без людини · 0:15–0:45
+*«Агент-покупець знаходить найдешевшого перекладача. Два центи — менше ліміту, тож людина не потрібна: він блокує справжні USDC в ескроу на Base Sepolia. Агент-виконавець робить роботу, агент-суддя її приймає, і ескроу платить виконавцю. Дві справжні транзакції — ось вони на BaseScan.»*
 
-**Екран:** той самий
+### 🎬 3 · Велика угода, з людиною · 0:40–1:10
+**Що робити:** встав
+```
+Audit this Solidity withdraw() for reentrancy: it sends ETH to msg.sender first, then sets balance[msg.sender] = 0.
+```
+Покажи причину в **Human gate** («$2 is above the $1 limit…»), зроби Selfie Check (відео прискор), далі виконавець → суддя → ще один Selfie Check → **Paid to provider**.
 
-**Що робити:**
-1. У поле **Ask in your own words** встав:
-   ```
-   Translate into Czech, cheapest provider please: "Good morning, the meeting is at 10."
-   ```
-2. Натисни **Ask the buyer agent**
-3. Наведи курсор на рядок **Understood as translate**, потім на список виконавців, де обраний підсвічений
-4. Наведи на плитку **The Graph** зі значком **Live**
-5. Покажи, що в **Human gate** написано «Not needed»
-6. Натисни **Let the provider's agent do the job**, потім **Ask the judge**
-7. Покажи статус **Paid to provider**
+> "Two dollars is above the limit, so the agent stops and asks me. I approve with a World ID Selfie Check, bound to this exact deal. Only then the money moves. The auditor finds the bug; the amount is big, so the final payout needs me again."
 
-**Що говорити:**
-> "I ask in my own words. The buyer agent understands the job and finds the cheapest translator. Before any money moves, it checks the translator's wallet on The Graph — live data. It is two cents and the wallet is clean, so no human is needed. The money waits in escrow. The provider agent does the work. A judge agent checks it, and only then the money is paid."
+*«Два долари — більше ліміту, тож агент зупиняється і питає мене. Я підтверджую через World ID Selfie Check, прив'язаний саме до цієї угоди. Лише тоді гроші рухаються. Аудитор знаходить помилку; сума велика, тож фінальна виплата знову потребує мене.»*
 
-*Переклад: «Я прошу своїми словами. Агент-покупець розуміє завдання і знаходить найдешевшого перекладача. Перш ніж рухаються гроші, він перевіряє гаманець перекладача в The Graph — живі дані. Це два центи, гаманець чистий, тож людина не потрібна. Гроші чекають в ескроу. Агент-виконавець робить роботу. Агент-суддя перевіряє її, і лише тоді гроші виплачуються.»*
+### 🎬 4 · Безпека і чесність · 1:10–1:25
+**Екран:** банер із лімітами, потім `HACKATHON.md` на GitHub
 
----
+> "Hard caps are in code: five dollars per payment, ten per day. Nothing pays twice. The escrow is an agent wallet, not a smart contract yet — and our base was built before tonight; HACKATHON.md says exactly what is new."
 
-### 🎬 Сцена 3 — Велика угода, з людиною · 0:45–1:30
-
-**Екран:** той самий
-
-**Що робити:**
-1. У поле **Ask in your own words** встав:
-   ```
-   Audit this Solidity withdraw() for reentrancy: it sends ETH to msg.sender first, then sets balance[msg.sender] = 0.
-   ```
-2. Натисни **Ask the buyer agent**
-3. Покажи в **Human gate** причину: «$25 is above the $1 limit…»
-4. Натисни **Approve with Selfie Check**, скануй QR телефоном, зроби селфі. **Телефон не знімай**, просто говори
-5. Покажи статус **Funds in escrow**
-6. **Let the provider's agent do the job**, потім **Ask the judge**
-7. Суддя каже **Accepted**, але сума велика, тож знову з'являється Selfie Check. Підтверди
-8. Покажи **Paid to provider** і праву колонку **Deal history**
-
-**Що говорити:**
-> "Now a big job: a smart contract audit for twenty-five dollars. This is above the limit, so the agent cannot pay alone. I approve with World ID Selfie Check, and the proof is bound to this exact deal. The money is locked in escrow. The auditor agent finds the bug. The judge accepts the work, but the amount is big, so the last word is mine again. One more selfie, and the auditor is paid. Every step is in the history."
-
-*Переклад: «Тепер велика робота: аудит смарт-контракту за двадцять п'ять доларів. Це більше за ліміт, тож агент не може заплатити сам. Я підтверджую через World ID Selfie Check, і доказ прив'язаний саме до цієї угоди. Гроші заблоковані в ескроу. Агент-аудитор знаходить помилку. Суддя приймає роботу, але сума велика, тож останнє слово знову за мною. Ще одне селфі, і аудитор отримує оплату. Кожен крок є в історії.»*
+*«Жорсткі ліміти — у коді: п'ять доларів за платіж, десять на день. Ніщо не оплачується двічі. Ескроу — це гаманець агента, а не смарт-контракт, поки що. Основа зроблена до сьогоднішньої ночі; HACKATHON.md точно каже, що нове.»*
 
 ---
 
-### 🎬 Сцена 4 — Чесно про межі · 1:30–1:45
+## 3. Після запису
 
-**Екран:** жовтий рядок угорі сторінки («Settlement is simulated…»), потім файл `HACKATHON.md` на GitHub, розділ **What is real and what is simulated**
+- [ ] ≤ **90 секунд**
+- [ ] Голос чутно; збої не вирізані, лише прискорене очікування
+- [ ] У кадрі немає ключів, `.env.local`, налаштувань Vercel
+- [ ] У HQ: репозиторій + відео + тема **Agentic Economy** + галочка **Best ElevenLabs Use**, якщо голос був ElevenLabs
+- [ ] Подано **до 07:14**
 
-**Навіщо:** 10% балів дають за чесні межі продукту
+## 4. Запасний план
 
-**Що говорити:**
-> "To be honest about limits: payments here are simulated — escrow is a record, not money on chain yet. The selfie gate and The Graph data are real, from my earlier project. Discovery, escrow, the judge and the agents were built for this hackathon."
-
-*Переклад: «Чесно про межі: платежі тут симульовані — ескроу поки що є записом, а не грошима в блокчейні. Селфі-контроль і дані The Graph справжні, з мого попереднього проєкту. Пошук виконавця, ескроу, суддя й агенти зроблені для цього хакатону.»*
-
----
-
-### 🎬 Сцена 5 — Підсумок · 1:45–2:00
-
-**Екран:** сторінка з закритою великою угодою
-
-**Що говорити:**
-> "Agents find each other, agree a price, and work. The money waits in escrow until a judge checks the result. And a real human is on the gate — only when the risk is real. Thank you."
-
-*Переклад: «Агенти знаходять одне одного, домовляються про ціну і працюють. Гроші чекають в ескроу, поки суддя не перевірить результат. А справжня людина стоїть на воротах — лише тоді, коли ризик справжній. Дякую.»*
-
----
-
-## 4. Після запису — перевір
-
-- [ ] Довжина **не більше 2:00**. Якщо довше, скороти паузи в сцені 3
-- [ ] Голос чутно всюди
-- [ ] Експорт у **1080p**
-- [ ] У кадрі **немає** ключів, `.env.local`, налаштувань Vercel, особистих закладок
-- [ ] Відео і посилання на репозиторій здані **до 07:14**
-
-## 5. Запасний план
-
-- **Selfie Check не працює на місці** (Wi‑Fi, телефон): запиши сцену 2 і поясни сцену 3 словами на тлі картки «Human gate». Не вдавай, що підтвердження пройшло.
-- **OpenAI не відповідає:** суддя скаже «Uncertain» і передасть рішення людині. Це теж чесна демонстрація: система не платить навмання.
-- **Немає часу на дві сцени:** кнопка **Run the demo** вгорі проганяє обидві історії сама і зупиняється на кожному Selfie Check.
+- **Selfie Check не працює:** покажи сцену 2 повністю, а в сцені 3 чесно скажи, що підтвердження не пройшло через мережу. Не вдавай, що пройшло.
+- **Транзакція впала:** на екрані з'явиться помилка і кнопка «Retry the payment». Покажи це: «нічого не оплачується двічі» — теж частина демо.
+- **Немає ключів гаманців:** угоди будуть **SIMULATED**. Так і скажи у відео; для цього треку це сильно мінус, тож ключі — пріоритет №1.
