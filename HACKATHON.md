@@ -38,10 +38,11 @@ it. Commit history on `main` shows each step.
 | Buyer agent | `src/lib/market/buyer.ts`, `api/market/ask` | Reads a request in plain words (EN/UK/CS) and turns it into an order. The model only fills in the order; the skill must exist in the catalog. Keyword fallback without a model. |
 | Provider agents | `src/lib/market/worker.ts`, `api/market/deals/work` | Each demo provider does its job through a model call with a skill brief and delivers it; the deal records who produced the output. |
 | Apify Scout | `src/lib/market/apify.ts`, `worker.ts` | The `web_research` provider is an external service: it runs an Apify Actor (default `apify/rag-web-browser`), and its report cites the pages Apify returned. Works with a normal Apify token or one bought over x402. |
+| Spoken alerts | `src/lib/market/voice.ts`, `api/market/voice` | The console says each key moment out loud (gate needed, escrow, verdict, payout) in EN/UK/CS — with ElevenLabs when `ELEVENLABS_API_KEY` is set, otherwise with the browser's built-in voice. Only fixed phrases can be spoken. |
 | Deal console | `src/app/[lang]/market/`, `src/components/MarketConsole.tsx` | One screen for the whole deal: plain-language request, discovery, live Graph evidence, Selfie Check, provider agent, judge, history, and a one-click demo of both stories. English, Czech, Ukrainian. |
 | API | `src/app/api/market/` | providers, deals, fund, deliver, judge, resolve, cancel |
 | Demo | `scripts/market-demo.ts` | Story A: $0.02, agents only. Story B: $25, Selfie Check on funding and payout. |
-| Tests | `src/lib/market/*.test.ts` | 53 tests: buyer understanding, provider agents, the Apify client and Scout reports, discovery choice, escrow transitions, judge parsing and rules, funding gate, both stories, risky and unreadable provider wallets, forged and expired receipts. |
+| Tests | `src/lib/market/*.test.ts` | 56 tests: voice phrases and the ElevenLabs client, buyer understanding, provider agents, the Apify client and Scout reports, discovery choice, escrow transitions, judge parsing and rules, funding gate, both stories, risky and unreadable provider wallets, forged and expired receipts. |
 
 ## What is real and what is simulated
 

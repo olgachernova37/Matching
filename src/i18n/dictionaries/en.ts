@@ -139,6 +139,17 @@ export const en = {
       "Receipts are single-action, short-lived, and bound to the proposed payload. The server decides whether execution is allowed.",
   },
   market: {
+    voiceOn: "🔊 Voice on",
+    voiceOff: "🔈 Voice off",
+    voice: {
+      gateNeeded: "This payment needs a human. Please confirm with a Selfie Check.",
+      funded: "Payment is locked in escrow.",
+      judgeAccepted: "The judge accepted the work.",
+      judgeRejected: "The judge rejected the work.",
+      judgeUnsure: "The judge is not sure. A human will decide.",
+      paid: "Done. The provider is paid.",
+      refunded: "Done. The money went back to the buyer.",
+    },
     askLabel: "Ask in your own words",
     askPlaceholder: "e.g. Translate into Czech, cheapest: \"See you tomorrow\"",
     askButton: "Ask the buyer agent",

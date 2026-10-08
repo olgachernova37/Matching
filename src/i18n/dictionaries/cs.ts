@@ -134,6 +134,17 @@ export const cs: Dictionary = {
   },
 
   market: {
+    voiceOn: "🔊 Hlas zapnut",
+    voiceOff: "🔈 Hlas vypnut",
+    voice: {
+      gateNeeded: "Tato platba potřebuje člověka. Potvrďte ji přes Selfie Check.",
+      funded: "Platba je uzamčena v escrow.",
+      judgeAccepted: "Soudce práci přijal.",
+      judgeRejected: "Soudce práci zamítl.",
+      judgeUnsure: "Soudce si není jistý. Rozhodne člověk.",
+      paid: "Hotovo. Dodavatel je zaplacen.",
+      refunded: "Hotovo. Peníze se vrátily kupujícímu.",
+    },
     askLabel: "Zadejte vlastními slovy",
     askPlaceholder: "např. Přelož do češtiny, nejlevněji: „See you tomorrow“",
     askButton: "Zadat agentovi-kupujícímu",

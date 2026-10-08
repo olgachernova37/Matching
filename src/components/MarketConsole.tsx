@@ -1,12 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import HumanGate from "@/components/HumanGate";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { useI18n } from "@/i18n/client";
 import type { Deal, DealStatus, DiscoveryStrategy, Provider, ProviderRisk, Verdict } from "@/lib/market/types";
 import type { AgentAction, HumanGateReceipt } from "@/lib/types";
+import type { Dictionary } from "@/i18n/dictionaries/en";
+
+type Phrase = keyof Dictionary["market"]["voice"];
 
 /*
  * Marketplace deal console — one screen for the whole deal:
@@ -110,6 +113,28 @@ export default function MarketConsole() {
   const [order, setOrder] = useState<Order | null>(null);
   /** Autopilot: requests still to run; null when the demo is not running. */
   const [demoQueue, setDemoQueue] = useState<string[] | null>(null);
+  const [voiceOn, setVoiceOn] = useState(false);
+  const spoken = useRef<string>("");
+
+  /** ElevenLabs when the server has a key; otherwise the browser's own voice. */
+  const say = useCallback(async (phrase: Phrase) => {
+    try {
+      const response = await fetch("/api/market/voice", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ phrase, locale }) });
+      if (response.ok) {
+        const url = URL.createObjectURL(await response.blob());
+        const audio = new Audio(url);
+        audio.onended = () => URL.revokeObjectURL(url);
+        await audio.play();
+        return;
+      }
+    } catch { /* fall through to browser speech */ }
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      const utterance = new SpeechSynthesisUtterance(t.market.voice[phrase]);
+      utterance.lang = locale === "uk" ? "uk-UA" : locale === "cs" ? "cs-CZ" : "en-US";
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(utterance);
+    }
+  }, [locale, t.market.voice]);
 
   useEffect(() => {
     void api<CatalogReply>("/api/market/providers").then(setCatalog).catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)));
@@ -210,6 +235,25 @@ export default function MarketConsole() {
 
   const startDemo = () => { setDeal(null); setDiscovery(null); setApproval(null); setOrder(null); setDemoQueue([...DEMO_REQUESTS]); };
 
+  // Speak each new moment of the deal once: a gate, escrow, a verdict, the payout.
+  useEffect(() => {
+    if (!voiceOn || !deal) return;
+    const phrase: Phrase | null =
+      approval ? "gateNeeded"
+      : deal.status === "released" ? "paid"
+      : deal.status === "refunded" ? "refunded"
+      : deal.verdict && deal.status === "disputed" ? "judgeUnsure"
+      : deal.verdict?.verdict === "accepted" ? "judgeAccepted"
+      : deal.verdict?.verdict === "rejected" ? "judgeRejected"
+      : deal.status === "funded" ? "funded"
+      : null;
+    if (!phrase) return;
+    const key = `${deal.id}:${phrase}:${approval?.id ?? ""}`;
+    if (spoken.current === key) return;
+    spoken.current = key;
+    void say(phrase);
+  }, [voiceOn, deal, approval, say, t.market.voice]);
+
   const reached = useMemo(() => reachedSteps(deal), [deal]);
   const limit = catalog?.autoApproveLimitUsd ?? 1;
   const statusTone = deal?.status === "released" ? "text-ok" : deal?.status === "refunded" || deal?.status === "cancelled" ? "text-danger" : "text-warn";
@@ -224,6 +268,7 @@ export default function MarketConsole() {
             <h1 className="mt-1 text-xl font-semibold">{t.market.console}</h1>
           </div>
           <div className="flex flex-wrap items-center gap-5">
+            <button type="button" aria-pressed={voiceOn} onClick={() => setVoiceOn((on) => !on)} className={`border px-3 py-2 text-xs ${voiceOn ? "border-ok text-ok" : "border-border text-muted hover:text-foreground"}`}>{voiceOn ? t.market.voiceOn : t.market.voiceOff}</button>
             {demoQueue
               ? <span className="flex items-center gap-3"><span className="font-mono text-xs uppercase tracking-[0.12em] text-warn">{approval ? t.market.demoWaiting : t.market.demoRunning}</span><button type="button" onClick={() => setDemoQueue(null)} className="border border-border px-3 py-2 text-xs text-muted hover:text-foreground">{t.market.stopDemo}</button></span>
               : <button type="button" disabled={busy} onClick={startDemo} className="border border-brand px-3 py-2 text-xs font-semibold text-brand hover:bg-brand/10 disabled:opacity-50">{t.market.runDemo}</button>}
